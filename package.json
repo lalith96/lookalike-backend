@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/lalith96/lookalike-backend/issues"
   },
-  "homepage": "https://github.com/lalith96/lookalike-backend#readme"
+  "homepage": "https://github.com/lalith96/lookalike-backend#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
