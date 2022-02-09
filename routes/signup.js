@@ -1,0 +1,41 @@
+const express = require("express");
+const router = express.Router();
+
+const { userModel } = require("../models/user_model");
+const { infoModel } = require("../models/info_model");
+
+router.post("/", async (req, res) => {
+  console.log("signup req");
+  console.log(req.body);
+  let info = await infoModel.findOne({});
+  let id = (info.totalusers = info.totalusers + 1);
+  console.log(info);
+  let userdata = ({
+    id: id,
+    email,
+    number,
+    fullname,
+    username,
+    password,
+  } = req.body);
+  const user_model = new userModel(userdata);
+  const result = await user_model.save();
+  info.save();
+  res.send(result);
+});
+
+router.post("/checkuser", async (req, res) => {
+  console.log(req.body);
+  const user = await userModel.findOne({ email: req.body.email });
+  if (user) {
+    res.send("userFound");
+  } else {
+    res.send("success");
+  }
+});
+
+router.get("/checkerromsg", (req, res) => {
+  res.send("No sufficient data");
+});
+
+module.exports = router;

@@ -10,4 +10,6 @@ textpattern/
 HISTORY.txt
 README.txt
 node_modules
+.env
+configuration
 
