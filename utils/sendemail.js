@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-function sendemail(code) {
+function sendemail(code, receivermail) {
   var transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -9,7 +9,7 @@ function sendemail(code) {
     },
   });
   var mailOptions = {
-    to: "lalithkasa31dec@gmail.com",
+    to: receivermail,
     subject: "Verification code - lookalike",
     text: `Your verification code is ${code}`,
   };

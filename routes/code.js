@@ -27,7 +27,7 @@ router.post("/getcode", async (req, res) => {
     const otpObj = new otpModel(newotp);
     await otpObj.save();
   }
-  sendMail(randnum);
+  sendMail(randnum, email);
   res.send(randnum);
 });
 
