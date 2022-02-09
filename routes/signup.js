@@ -10,14 +10,8 @@ router.post("/", async (req, res) => {
   let info = await infoModel.findOne({});
   let id = (info.totalusers = info.totalusers + 1);
   console.log(info);
-  let userdata = ({
-    id: id,
-    email,
-    number,
-    fullname,
-    username,
-    password,
-  } = req.body);
+  let userdata = ({ id, email, number, fullname, username, password } =
+    req.body);
   const user_model = new userModel(userdata);
   const result = await user_model.save();
   info.save();
@@ -34,8 +28,14 @@ router.post("/checkuser", async (req, res) => {
   }
 });
 
-router.get("/checkerromsg", (req, res) => {
-  res.send("No sufficient data");
+router.post("/checkusername", async (req, res) => {
+  console.log(req.body);
+  const user = await userModel.findOne({ username: req.body.username });
+  if (user) {
+    res.send("username already exist. Please try with different username");
+  } else {
+    res.send("success");
+  }
 });
 
 module.exports = router;

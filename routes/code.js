@@ -28,7 +28,7 @@ router.post("/getcode", async (req, res) => {
     await otpObj.save();
   }
   sendMail(randnum);
-  res.send("code sent succefully");
+  res.send(randnum);
 });
 
 router.post("/verifycode", async (req, res) => {
@@ -41,9 +41,9 @@ router.post("/verifycode", async (req, res) => {
       if (result.otp === req.body.otp) {
         result.time = 0;
         result.save();
-        res.status(200).send("Success");
+        res.status(200).send("success");
       } else {
-        res.status(200).send("Not matched");
+        res.status(200).send("You entered wrong code. Please try again.");
       }
     } else {
       res.status(200).send({ status: "Your otp expired. Please try again" });
