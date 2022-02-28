@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 
 const { userModel } = require("../models/user_model");
-const { sendMail } = require("../utils/sendemail");
 
 router.post("/", async (req, res) => {
   console.log("inside login api");
@@ -13,7 +12,7 @@ router.post("/", async (req, res) => {
   if (userData.password === req.body.password) {
     res.send(userData);
   } else {
-    res.send("Wrong password! Please try again");
+    res.status(400).send("Wrong password! Please try again");
   }
 });
 

@@ -10,8 +10,14 @@ router.post("/", async (req, res) => {
   let info = await infoModel.findOne({});
   let id = (info.totalusers = info.totalusers + 1);
   console.log(info);
-  let userdata = ({ id, email, number, fullname, username, password } =
-    req.body);
+  let userdata = ({
+    id,
+    email,
+    number,
+    name: fullname,
+    username,
+    password,
+  } = req.body);
   const user_model = new userModel(userdata);
   const result = await user_model.save();
   info.save();
