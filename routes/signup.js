@@ -30,7 +30,7 @@ router.post("/checkuser", async (req, res) => {
   if (user) {
     res.send("userFound");
   } else {
-    res.send("success");
+    res.status(400).send("User not found");
   }
 });
 
