@@ -9,6 +9,7 @@ app.use(express.json());
 const login = require("./routes/login");
 const signup = require("./routes/signup");
 const code = require("./routes/code");
+const staticdata = require("./routes/staticdata");
 
 mongoose
   .connect(process.env.DATABASE_URL, {
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 app.use("/api/login", login);
 app.use("/api/signup", signup);
 app.use("/api/code", code);
+app.use("/api/staticdata", staticdata);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

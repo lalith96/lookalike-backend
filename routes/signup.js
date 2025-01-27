@@ -9,7 +9,6 @@ router.post("/", async (req, res) => {
   console.log(req.body);
   let info = await infoModel.findOne({});
   let id = (info.totalusers = info.totalusers + 1);
-  console.log(info);
   let userdata = ({
     id,
     email,
