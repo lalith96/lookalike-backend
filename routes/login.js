@@ -4,8 +4,6 @@ const router = express.Router();
 const { userModel } = require("../models/user_model");
 
 router.post("/", async (req, res) => {
-  console.log("inside login api");
-  console.log(req.body);
   const userData = await userModel.findOne({
     $or: [{ email: req.body.email }, { number: req.body.number }],
   });

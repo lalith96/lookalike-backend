@@ -5,7 +5,6 @@ const { otpModel } = require("../models/otp_model");
 const { sendMail } = require("../utils/sendemail");
 
 router.post("/getcode", async (req, res) => {
-  console.log(req.body);
   const email = req.body.email;
   const date = new Date();
   let randnum =
@@ -32,7 +31,6 @@ router.post("/getcode", async (req, res) => {
 });
 
 router.post("/verifycode", async (req, res) => {
-  console.log(req.body);
   const email = req.body.email;
   const result = await otpModel.findOne({ email });
   if (result) {

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const staticSchema = mongoose.Schema(
   {
     splash: Object,
+    walkthrough: [Object],
   },
   {
     collection: "staticdata",

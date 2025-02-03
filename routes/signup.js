@@ -5,8 +5,6 @@ const { userModel } = require("../models/user_model");
 const { infoModel } = require("../models/info_model");
 
 router.post("/", async (req, res) => {
-  console.log("signup req");
-  console.log(req.body);
   let info = await infoModel.findOne({});
   let id = (info.totalusers = info.totalusers + 1);
   let userdata = ({
