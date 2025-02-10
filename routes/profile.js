@@ -1,0 +1,155 @@
+const express=require('express');
+const {ObjectId}=require('mongodb');
+
+const profileModel=require('../models/profile_model');
+const userModel=require('../models/user_model');
+const postModel=require('../models/posts_model');
+const alertModel=require('../models/alerts_model');
+
+
+const profileRouter = express.Router();
+
+profileRouter.post("/editName",async (req,res)=>{
+    const userId=req.userID;
+    const newName=req.body.name;
+    try{
+        const userData=await userModel.findOneAndUpdate({_id:userId},{fullname:newName},{new:true}).select("-password");  
+        res.status(200).send({'success':true,"message":'name updated successfully',"result":userData})
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error Updating name',"errorMsg":err});
+    }
+});
+
+profileRouter.post("/editUserName",async (req,res)=>{
+    const profileId=req.profileId;
+    const newUserName=req.body.username;
+    try{
+        const profileResp=await profileModel.findOneAndUpdate({_id:profileId},{username:newUserName},{new:true}).populate({path:'user',select:['-password']}); 
+        res.status(200).send({'success':true,"message":'username updated successfully',"result":profileResp})
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error Updating username',"errorMsg":err});
+    }
+});
+
+
+profileRouter.post("/editBio",async (req,res)=>{
+    const bio=req.body.bio;
+    const profileId=req.profileId;
+    try{
+        const profileData=await profileModel.findOneAndUpdate({_id:profileId},{bio:bio},{new:true}).populate({path:'user',select:['-password']}); 
+        res.status(200).send({'success':true,"message":'Bio updated successfully',"result":profileData})
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error Updating Bio',"errorMsg":err});
+    }
+});
+
+
+profileRouter.post("/updateImage",async (req,res)=>{
+    const {image}=req.body;
+    const profileId=req.profileId;
+    try{
+        const profileData=await profileModel.findOneAndUpdate({_id:profileId},{profileImg:image},{new:true}).populate({path:'user',select:['-password']});  
+        res.status(200).send({'success':true,"message":'ProfileImage updated successfully',"result":profileData})
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error Updating ProfileImage',"errorMsg":err});
+    }
+});
+
+
+profileRouter.post("/addPost",async (req,res)=>{
+    const {postImages,location,description}=req.body;
+    const profileId=req.profileId;
+
+    try{
+        //add into posts array.
+        const postData={
+            profileId,
+            img:postImages,
+            location,
+            description
+        }
+        
+        const post_model = new postModel(postData);
+        const postResponse = await post_model.save();
+
+        //add in profile record in posts array
+        const profileRes=await profileModel.findOneAndUpdate({_id:profileId},{$push:{posts:postResponse._id}},{new:true}).populate({path:'user',select:['-password']}); 
+        res.status(200).send({'success':true,"message":'post updated successfully',"result":profileRes})
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error Updating Bio',"errorMsg":err});
+    }
+});
+
+
+profileRouter.post('/openProfile',async(req,res)=>{
+    const {userID,profileId}=req;
+
+    const targetProfileId=req.body.targetProfileId;
+
+
+    //check targetprofileid is present in following array of profileid if following , send posts array .
+    try{
+        const resultObj=await profileModel.findOne({_id:targetProfileId}).populate({path:'user',select:['-password']}); 
+        const following=resultObj.following;
+        const result = resultObj.toObject();
+        if(following && following.includes(profileId)){
+            result.isFollowing="Y";
+        }else{
+            result['isFollowing']="N";
+        }
+        console.log(result)
+        res.status(200).send({'success':true,"message":'Open Profile API successful',"result":result});
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error Opening profile',"errorMsg":err});
+    }
+   
+});
+
+
+profileRouter.post('/sendRequest',async(req,res)=>{
+    const {userID,profileId,username}=req;
+    const {targetProfileId,targetUserName}=req.body;
+
+    console.log(profileId)
+
+    try{
+    //insert in alerts table 
+        const senderMsg={
+            msg:"Request Sent to",
+            profileId:new ObjectId(targetProfileId),
+            username:targetUserName
+        }
+
+        const receiverMsg={
+            msg:"Received Follow Request By",
+            profileId:new ObjectId(profileId),
+            username:username
+        }
+
+        
+        const alertMsg={
+            sender:new ObjectId(profileId),
+            receiver:new ObjectId(targetProfileId),
+            senderMsg,
+            receiverMsg
+        }
+
+        console.log(alertMsg)
+
+        const alertData = new alertModel(alertMsg);
+        const result = await alertData.save();
+        res.status(200).send({'success':true,"message":'Request Sent',"result":result});
+  }catch(err){
+    console.log(err);
+    res.status(400).send({'success':false,"message":'Error while Sending Request',"errorMsg":err});
+  }
+})
+
+
+module.exports=profileRouter;
