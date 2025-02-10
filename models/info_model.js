@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
+const mongoose=require('mongoose');
 
-const infoSchema = mongoose.Schema(
+const infoSchema =new mongoose.Schema(
   {
     totalusers: Number,
   },
@@ -9,4 +9,4 @@ const infoSchema = mongoose.Schema(
 
 const infoModel = mongoose.model("info", infoSchema);
 
-exports.infoModel = infoModel;
+module.exports=infoModel;

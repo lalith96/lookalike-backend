@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const staticSchema = mongoose.Schema(
+const staticSchema =new  mongoose.Schema(
   {
     splash: Object,
   },
@@ -11,4 +11,4 @@ const staticSchema = mongoose.Schema(
 
 const staticModel = mongoose.model("staticdata", staticSchema);
 
-exports.staticModel = staticModel;
+module.exports = staticModel;

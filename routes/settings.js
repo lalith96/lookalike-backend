@@ -50,7 +50,7 @@ settingsRouter.get("/",async(req,res)=>{
 
     //support 
     settings.Support[0]["Terms Of Use"]=termsOfUse;
-    
+    settings.Support[1]["Privacy Policy"]=privacyPolicy;
 
     res.status(200).send(settings);
 });
@@ -61,7 +61,7 @@ settingsRouter.post('/dobUpdate',async(req,res)=>{
     const userId=req.userID;
     const dob=req.body.dob;
     try{
-        const userData=await userModel.findOneAndUpdate({_id:userId},{dob:dob},{new:true}); 
+        const userData=await userModel.findOneAndUpdate({_id:userId},{dob:dob},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'DOB Updated successfully',"result":userData})
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Updating Date Of Birth',"errorMsg":err});
@@ -75,7 +75,7 @@ settingsRouter.post('/genderUpdate',async(req,res)=>{
     const userId=req.userID;
     const gender=req.body.gender;
     try{
-        const userData=await userModel.findOneAndUpdate({_id:userId},{gender},{new:true}); 
+        const userData=await userModel.findOneAndUpdate({_id:userId},{gender},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'Gender Updated successfully',"result":userData})
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Updating Gender',"errorMsg":err});
@@ -86,7 +86,7 @@ settingsRouter.post('/countryRegion',async(req,res)=>{
     const userId=req.userID;
     const country=req.body.country;
     try{
-        const userData=await userModel.findOneAndUpdate({_id:userId},{country},{new:true}); 
+        const userData=await userModel.findOneAndUpdate({_id:userId},{country},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'Country/Region Updated successfully',"result":userData})
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Updating Country/Region',"errorMsg":err});
@@ -97,7 +97,7 @@ settingsRouter.post('/language',async(req,res)=>{
     const userId=req.userID;
     const language=req.body.language;
     try{
-        const userData=await userModel.findOneAndUpdate({_id:userId},{language},{new:true}); 
+        const userData=await userModel.findOneAndUpdate({_id:userId},{language},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'Language Updated successfully',"result":userData})
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Updating Language',"errorMsg":err});
@@ -111,8 +111,8 @@ settingsRouter.post('/emailIdUpdate',async(req,res)=>{
     console.log(userId);
     const email=req.body.email;
     try{
-      const userData=await userModel.findOneAndUpdate({_id:userId},{email},{new:true});
-      const token = generateToken({_id:userId,email});
+      const userData=await userModel.findOneAndUpdate({_id:userId},{email},{new:true}).select('-password').populate('profile');
+      const token = generateToken(userData);
       res.cookie('token',token);
       res.status(200).send({'success':true,"message":'Email Updated successfully',"result":userData})
     }catch(err){
@@ -126,9 +126,9 @@ settingsRouter.post('/passwordUpdate',async(req,res)=>{
     const oldPassword=req.body.oldPassword;
     const newPassword=req.body.newPassword;
     try{
-        const userPresent=await userModel.findOne({_id:userId,password:oldPassword},{new:true});
+        const userPresent=await userModel.findOne({_id:userId,password:oldPassword},{new:true}).select('-password'); 
         if(userPresent){
-            const userData=await userModel.findOneAndUpdate({_id:userId,password:oldPassword},{password:newPassword}); 
+            const userData=await userModel.findOneAndUpdate({_id:userId,password:oldPassword},{password:newPassword}).select('-password'); 
             res.status(200).send({'success':true,"message":'Password Updated Successfully',"result":userData});
         }else{
             res.status(400).send({'success':false,"message":'Wrong Password'});
@@ -142,7 +142,7 @@ settingsRouter.post('/themeUpdate',async(req,res)=>{
     const userId=req.userID;
     const theme=req.body.theme;
     try{
-        const userData=await userModel.findOneAndUpdate({_id:userId},{theme:theme},{new:true}); 
+        const userData=await userModel.findOneAndUpdate({_id:userId},{theme:theme},{new:true}).select('-password');  
         res.status(200).send({'success':true,"message":'Theme Updated successfully',"result":userData})
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Updating Theme',"errorMsg":err});
@@ -153,7 +153,7 @@ settingsRouter.post('/profileVisibilty',async(req,res)=>{
     const profileId=req.profileId;
     const visibility=req.body.visibility;
     try{
-        const profileData=await profileModel.findByIdAndUpdate(profileId,{visibility:visibility},{new:true}); 
+        const profileData=await profileModel.findByIdAndUpdate(profileId,{visibility:visibility},{new:true});
         res.status(200).send({'success':true,"message":'Visibility Updated successfully',"result":profileData})
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Updating Visibility',"errorMsg":err});
@@ -164,6 +164,13 @@ settingsRouter.post('/logout',(req,res)=>{
     res.clearCookie('token');
     res.status(200).send({'success':true,"message":'Logout Successful'});
 })
+
+settingsRouter.post('/logout',(req,res)=>{
+    res.clearCookie('token');
+    res.status(200).send({'success':true,"message":'Logout Successful'});
+})
+
+
 
 settingsRouter.post('/sendProfiles',async (req,res)=>{
     const {profileId,username}=req;

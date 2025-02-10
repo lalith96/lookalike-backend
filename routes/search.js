@@ -1,5 +1,5 @@
 const express=require('express');
-const userModel=require('../models/user_model');
+const profileModel=require('../models/profile_model')
 
 const searchRouter=express.Router();
 
@@ -7,10 +7,11 @@ searchRouter.post('/',async(req,res)=>{
     const username=req.body.username;
     const userID=req.userID;
 
+
     //search with username.
     try{
-        const userList=await userModel.find({username:{ $regex: username, $options: 'i' ,_id:{$ne:userID}}}).populate('profile');
-        res.status(200).send({'success':true,"message":'Matching profiles',"result":userList});
+        const profileList=await profileModel.find({username:{ $regex: username, $options: 'i'},user:{$ne:userID}});
+        res.status(200).send({'success':true,"message":'Matching profiles',"result":profileList});
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Retrieving profiles',"errorMsg":err});
     }
