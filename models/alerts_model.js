@@ -30,6 +30,14 @@ const alertSchema = new mongoose.Schema({
         username:String
     }
   },
+  postId:{
+      type:mongoose.Schema.Types.ObjectId,
+      ref:"posts"
+  },
+  commentId:{
+    type:mongoose.Schema.Types.ObjectId,
+      ref:"comments"
+  },
   createdAt:{ 
     type: Date, 
     default: Date.now

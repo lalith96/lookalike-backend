@@ -3,7 +3,6 @@ const {ObjectId}=require('mongodb');
 
 const profileModel=require('../models/profile_model');
 const userModel=require('../models/user_model');
-const postModel=require('../models/posts_model');
 const alertModel=require('../models/alerts_model');
 
 
@@ -56,32 +55,6 @@ profileRouter.post("/updateImage",async (req,res)=>{
     }catch(err){
         console.log(err);
         res.status(400).send({'success':false,"message":'Error Updating ProfileImage',"errorMsg":err});
-    }
-});
-
-
-profileRouter.post("/addPost",async (req,res)=>{
-    const {postImages,location,description}=req.body;
-    const profileId=req.profileId;
-
-    try{
-        //add into posts array.
-        const postData={
-            profileId,
-            img:postImages,
-            location,
-            description
-        }
-        
-        const post_model = new postModel(postData);
-        const postResponse = await post_model.save();
-
-        //add in profile record in posts array
-        const profileRes=await profileModel.findOneAndUpdate({_id:profileId},{$push:{posts:postResponse._id}},{new:true}).populate({path:'user',select:['-password']}); 
-        res.status(200).send({'success':true,"message":'post updated successfully',"result":profileRes})
-    }catch(err){
-        console.log(err);
-        res.status(400).send({'success':false,"message":'Error Updating Bio',"errorMsg":err});
     }
 });
 
@@ -150,6 +123,82 @@ profileRouter.post('/sendRequest',async(req,res)=>{
     res.status(400).send({'success':false,"message":'Error while Sending Request',"errorMsg":err});
   }
 })
+
+profileRouter.post('/unFollowRequest',async(req,res)=>{
+    const {profileId}=req;
+    const {targetProfileId}=req.body;
+
+    try{
+        //from sender  who is  unfollowing decrease following count and remove from array 
+        const senderData=await profileModel.findByIdAndUpdate({_id:profileId},{$inc:{followingCount:-1},$pull:{following:targetProfileId}});
+
+         //from target  who is  getting unfollowed decrease followers count and remove from followers array 
+        const receiverData=await profileModel.findByIdAndUpdate({_id:targetProfileId},{$inc:{followersCount:-1},$pull:{followers:profileId}});
+
+        res.status(200).send({'success':true,"message":'Unfollowed successfully'});
+
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error while Unfollowing',"errorMsg":err});
+    }
+
+})
+
+
+
+profileRouter.post('/blockProfile',async(req,res)=>{
+    const {profileId}=req;
+    const {targetProfileId}=req.body;
+
+    try{
+        //decrease followers and following count by 1  if they are following 
+        let blockingProfileUpdates=getUpdateObj(targetProfileId);
+        blockingProfileUpdates={...blockingProfileUpdates,$push:{blockedProfiles:targetProfileId}};
+        console.log(blockingProfileUpdates);
+        // let result=await profileModel.findByIdAndUpdate({_id:profileId},blockingProfileUpdates,{new:true});
+
+        blockingProfileUpdates=getUpdateObj(profileId);
+        blockingProfileUpdates={...blockingProfileUpdates,$push:{blockedByProfiles:profileId}};
+        // result=await profileModel.findByIdAndUpdate({_id:targetProfileId},blockingProfileUpdates,{new:true});
+        res.status(200).send({'success':true,"message":'Blocked successfully'});
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error while Blocking',"errorMsg":err});
+    }
+
+});
+
+profileRouter.post('/unBlockProfile',async(req,res)=>{
+    const {profileId}=req;
+    const {targetProfileId}=req.body;
+
+    try{
+        //remove from blockedprofiles in sender 
+        await profileModel.findByIdAndUpdate({_id:profileId},{$pull:{blockedProfiles:targetProfileId}});
+        //remove from blockedBy in receiver
+        await profileModel.findByIdAndUpdate({_id:targetProfileId},{$pull:{blockedByProfiles:profileId}});
+        res.status(200).send({'success':true,"message":'UnBlock Successfull'});
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error while unblocking',"errorMsg":err});
+    }
+
+})
+
+
+const getUpdateObj=(pid)=>{
+    return {
+        followingCount:{
+            $cond:{if:{$in:["$following",pid]}, then: "$followingCount", else: -1}
+        },
+        followersCount:{
+            $cond:{if:{$in:["$followers",pid]}, then: "$followersCount", else: -1}
+        },
+       $pull:{followers:pid},
+       $pull:{following:pid}
+    }
+}
+
 
 
 module.exports=profileRouter;

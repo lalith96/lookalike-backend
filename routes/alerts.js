@@ -28,13 +28,13 @@ alertRouter.post('/acceptrejectRequest',async(req,res)=>{
 
             //update sender following count.
             const sendProfileId=await profileModel.findByIdAndUpdate({_id:senderId},{
-                $push:{following:receiverId},
+                $push:{following:new ObjectId(receiverId)},
                 $inc: {followingCount: 1}
             });
 
             //update receivers followers count
             const receiverProfileId=await profileModel.findByIdAndUpdate({_id:receiverId},{
-                $push:{followers:senderId},
+                $push:{followers:new ObjectId(senderId)},
                 $inc: {followersCount: 1}
             });
 
@@ -45,7 +45,7 @@ alertRouter.post('/acceptrejectRequest',async(req,res)=>{
             res.status(200).send({'success':true,"message":'Request Deleted Successfully',"result":alertRes});
         }
     }catch(err){
-        res.status(400).send({'success':true,"message":'Error Updating Profiles or Alerts',"errorMsg":err});
+        res.status(400).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err});
     }
 
 });
@@ -67,21 +67,40 @@ alertRouter.post('/followBackRequest' ,async(req,res)=>{
 
         //update sender following count.
         const sendProfileId=await profileModel.findByIdAndUpdate({_id:senderId},{
-            $push:{followers:receiverId},
+            $push:{followers:new ObjectId(receiverId)},
             $inc: {followersCount: 1}
         });
 
         //update receivers followers count
         const receiverProfileId=await profileModel.findByIdAndUpdate({_id:receiverId},{
-            $push:{following:senderId},
+            $push:{following:new ObjectId(senderId)},
             $inc: {followingCount: 1}
         });
 
         res.status(200).send({'success':true,"message":'Request Accepted and Updated Profiles',"result":alertRes});
 
     }catch(err){
-        res.status(400).send({'success':true,"message":'Error Updating Profiles or Alerts',"errorMsg":err});
+        res.status(400).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err});
     }
 });
+
+alertRouter.get('/',async(req,res)=>{
+    const {profileId}=req;
+
+    try{
+        const senderData=await alertModel.find({sender:profileId});
+        const receiverData=await alertModel.find({receiver:profileId});
+
+        const result={
+            sender:senderData,
+            receiver:receiverData
+        }
+        
+        res.status(200).send({'success':true,"message":'Profiles Retrived Successfullt',"result":result});
+    }catch(err){
+        console.log(err);
+        res.status(400).send({'success':false,"message":'Error Retrieving Alerts',"errorMsg":err})
+    }
+})
 
 module.exports=alertRouter;

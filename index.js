@@ -10,6 +10,7 @@ const settingsRouter=require('./routes/settings');
 const profileRouter=require('./routes/profile');
 const searchRouter=require('./routes/search');
 const alertRouter=require('./routes/alerts');
+const postRouter=require('./routes/posts')
 
 const jwtAuth=require('./middleware/auth');
 const cookieParser=require('cookie-parser');
@@ -41,7 +42,7 @@ app.use("/api/settings",jwtAuth,settingsRouter);
 app.use("/api/profile",jwtAuth,profileRouter);
 app.use("/api/search",jwtAuth,searchRouter);
 app.use("/api/alerts",jwtAuth,alertRouter);
-
+app.use('/api/posts',jwtAuth,postRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
