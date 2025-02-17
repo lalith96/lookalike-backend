@@ -128,7 +128,9 @@ settingsRouter.post('/passwordUpdate',async(req,res)=>{
     try{
         const userPresent=await userModel.findOne({_id:userId,password:oldPassword},{new:true}).select('-password'); 
         if(userPresent){
-            const userData=await userModel.findOneAndUpdate({_id:userId,password:oldPassword},{password:newPassword}).select('-password'); 
+            const userData=await userModel.findOneAndUpdate({_id:userId,password:oldPassword},{password:newPassword}).select('-password').populate('profile'); 
+            const token = generateToken(userData);
+            res.cookie('token',token);
             res.status(200).send({'success':true,"message":'Password Updated Successfully',"result":userData});
         }else{
             res.status(400).send({'success':false,"message":'Wrong Password'});

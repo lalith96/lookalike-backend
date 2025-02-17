@@ -36,7 +36,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/login", login);
 app.use("/api/signup", signup);
-app.use("/api/code", code);
+app.use("/api/code",code);
 app.use("/api/staticdata", staticdata);
 app.use("/api/settings",jwtAuth,settingsRouter);
 app.use("/api/profile",jwtAuth,profileRouter);

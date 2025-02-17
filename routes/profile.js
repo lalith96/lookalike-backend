@@ -152,14 +152,14 @@ profileRouter.post('/blockProfile',async(req,res)=>{
 
     try{
         //decrease followers and following count by 1  if they are following 
-        let blockingProfileUpdates=getUpdateObj(targetProfileId);
-        blockingProfileUpdates={...blockingProfileUpdates,$push:{blockedProfiles:targetProfileId}};
-        console.log(blockingProfileUpdates);
-        // let result=await profileModel.findByIdAndUpdate({_id:profileId},blockingProfileUpdates,{new:true});
+        let profileResult=await profileModel.findById({_id:profileId});
+        let targetProfileResult=await profileModel.findById({_id:targetProfileId});
 
-        blockingProfileUpdates=getUpdateObj(profileId);
-        blockingProfileUpdates={...blockingProfileUpdates,$push:{blockedByProfiles:profileId}};
-        // result=await profileModel.findByIdAndUpdate({_id:targetProfileId},blockingProfileUpdates,{new:true});
+        let blockingProfileUpdates=updateObj(profileResult,targetProfileId);
+        let result=await profileModel.findByIdAndUpdate({_id:profileId},blockingProfileUpdates,{new:true});
+
+        blockingProfileUpdates=updateObj(targetProfileResult,profileId);
+        result=await profileModel.findByIdAndUpdate({_id:targetProfileId},blockingProfileUpdates,{new:true});
         res.status(200).send({'success':true,"message":'Blocked successfully'});
     }catch(err){
         console.log(err);
@@ -186,18 +186,34 @@ profileRouter.post('/unBlockProfile',async(req,res)=>{
 })
 
 
-const getUpdateObj=(pid)=>{
-    return {
-        followingCount:{
-            $cond:{if:{$in:["$following",pid]}, then: "$followingCount", else: -1}
-        },
-        followersCount:{
-            $cond:{if:{$in:["$followers",pid]}, then: "$followersCount", else: -1}
-        },
-       $pull:{followers:pid},
-       $pull:{following:pid}
-    }
+const updateObj=(result,pid)=>{
+    let followersArray=result.followers;
+        let isFollower=followersArray.includes(new ObjectId(pid));
+        let followingArray=result.following;
+        let isFollowing =followingArray.includes(new ObjectId(pid));
+
+        let followerField=0,followingField=0;
+
+        if(isFollower){
+            followerField=-1;
+        }
+
+        if(isFollowing){
+            followingField=-1;
+        }
+
+        let blockingProfileUpdates={
+            $inc:{
+                followersCount:followerField,
+                followingCount:followingField
+            },
+            $pull:{followers:pid,following:pid},
+            $push:{blockedProfiles:pid}
+        }
+
+        return blockingProfileUpdates;
 }
+
 
 
 

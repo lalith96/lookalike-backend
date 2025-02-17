@@ -22,7 +22,7 @@ router.post("/", async (req, res) => {
       }
       console.log(response);
      
-      res.status(200).send( {'success':true,"message":'Login Up Successful',"result":response});
+      res.status(200).send( {'success':true,"message":'Login  Successful',"result":response});
     } else {
       res.clearCookie('token');
       res.status(400).send( {'success':false,"message":'Wrong password please try again'});
@@ -33,5 +33,7 @@ router.post("/", async (req, res) => {
     res.status(400).send({'success':false,"message":'Error Logging in',"error":err})
   }
 });
+
+
 
 module.exports = router;

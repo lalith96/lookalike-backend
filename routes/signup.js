@@ -28,7 +28,7 @@ router.post("/", async (req, res) => {
     console.log(isuserPresent);
     if(isuserPresent){
       
-      res.status(200).send({'success':true,"message":'User Already signed Up'});
+      res.status(200).send({'success':false,"message":'User Already signed Up'});
     }else{
       const user_model = new userModel(userdata);
       const result = await user_model.save();
