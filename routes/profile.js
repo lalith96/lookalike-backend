@@ -155,10 +155,10 @@ profileRouter.post('/blockProfile',async(req,res)=>{
         let profileResult=await profileModel.findById({_id:profileId});
         let targetProfileResult=await profileModel.findById({_id:targetProfileId});
 
-        let blockingProfileUpdates=updateObj(profileResult,targetProfileId);
+        let blockingProfileUpdates=updateObj(profileResult,targetProfileId,"blockedProfiles");
         let result=await profileModel.findByIdAndUpdate({_id:profileId},blockingProfileUpdates,{new:true});
 
-        blockingProfileUpdates=updateObj(targetProfileResult,profileId);
+        blockingProfileUpdates=updateObj(targetProfileResult,profileId,"blockedByProfiles");
         result=await profileModel.findByIdAndUpdate({_id:targetProfileId},blockingProfileUpdates,{new:true});
         res.status(200).send({'success':true,"message":'Blocked successfully'});
     }catch(err){
@@ -186,7 +186,7 @@ profileRouter.post('/unBlockProfile',async(req,res)=>{
 })
 
 
-const updateObj=(result,pid)=>{
+const updateObj=(result,pid,field)=>{
     let followersArray=result.followers;
         let isFollower=followersArray.includes(new ObjectId(pid));
         let followingArray=result.following;
@@ -208,7 +208,7 @@ const updateObj=(result,pid)=>{
                 followingCount:followingField
             },
             $pull:{followers:pid,following:pid},
-            $push:{blockedProfiles:pid}
+            $push:{field:pid}
         }
 
         return blockingProfileUpdates;
