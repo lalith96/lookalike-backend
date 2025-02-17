@@ -21,16 +21,16 @@ router.post("/", async (req, res) => {
         username:userData.profile.username
       }
       console.log(response);
-
-      res.status(200).send(response);
+     
+      res.status(200).send( {'success':true,"message":'Login Up Successful',"result":response});
     } else {
       res.clearCookie('token');
-      res.status(400).send("Wrong password! Please try again");
+      res.status(400).send( {'success':false,"message":'Wrong password please try again'});
     }
   }catch(err){
     console.log(err);
     res.clearCookie('token');
-    res.status(400).send('Error Logging In')
+    res.status(400).send({'success':false,"message":'Error Logging in',"error":err})
   }
 });
 

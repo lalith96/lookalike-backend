@@ -27,7 +27,8 @@ router.post("/", async (req, res) => {
     let isuserPresent = await userModel.findOne({$or:[{email,number}]});
     console.log(isuserPresent);
     if(isuserPresent){
-      res.status(200).send('User Already signed Up');
+      
+      res.status(200).send({'success':true,"message":'User Already signed Up'});
     }else{
       const user_model = new userModel(userdata);
       const result = await user_model.save();
@@ -45,11 +46,11 @@ router.post("/", async (req, res) => {
       //sve profileid in user
       const finalRes=await userModel.updateOne({_id:result._id},{profile:profileRes._id});
       // info.save();
-      res.status(200).send(result);
+      res.status(200).send({'success':true,"message":'Sign Up Successful',"result":result});
     }
   }catch(err){
     console.log(err);
-    res.status(400).send({"error":"Error Signing Up"})
+    res.status(400).send({'success':false,"message":"Error Signing Up","error":err})
   }
 });
 
