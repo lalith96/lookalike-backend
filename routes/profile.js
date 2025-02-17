@@ -67,7 +67,7 @@ profileRouter.post('/openProfile',async(req,res)=>{
 
     //check targetprofileid is present in following array of profileid if following , send posts array .
     try{
-        const resultObj=await profileModel.findOne({_id:targetProfileId}).populate({path:'user',select:['-password']}); 
+        const resultObj=await profileModel.findOne({_id:targetProfileId,blockedByProfiles:profileId}).populate({path:'user',select:['-password']}); 
         const following=resultObj.following;
         const result = resultObj.toObject();
         if(following && following.includes(profileId)){
