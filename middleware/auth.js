@@ -6,10 +6,11 @@ dotenv.config();
 
 
 const jwtAuth=(req,res,next)=>{
-    const token = req.cookies.token;
+    // const token = req.cookies.token;
+    const token = req.headers['authorization'];
     console.log(token)
     if (!token) {
-        res.status(401).send('Unauthorized');
+        res.status(401).send({'success':false,"message":'Unauthorized'});
     }
     else{
         try{
@@ -22,7 +23,7 @@ const jwtAuth=(req,res,next)=>{
             req.username=payload.username;
             next();
         }catch(err){
-            res.send(401).send('Unauthorized');
+            res.status(401).send({'success':false,"message":'Unauthorized'});
         }
     } 
 }

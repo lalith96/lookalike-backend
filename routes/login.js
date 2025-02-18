@@ -18,7 +18,8 @@ router.post("/", async (req, res) => {
       const response={
         _id:userData._id,
         profileId:userData.profile._id,
-        username:userData.profile.username
+        username:userData.profile.username,
+        token:token
       }
       console.log(response);
      

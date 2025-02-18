@@ -10,7 +10,7 @@ const postsSchema=new mongoose.Schema({
     location:String,
     likeCount:{
         type:Number,
-        min:1
+        min:0
     },
     likeArray:[
         {
@@ -23,7 +23,7 @@ const postsSchema=new mongoose.Schema({
     ],
     commentCount:{
         type:Number,
-        min:1
+        min:0
     },
     commentArray:[
         {
