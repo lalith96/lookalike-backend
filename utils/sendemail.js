@@ -30,5 +30,3 @@ async function sendemail(code, receivermail) {
 }
 
 module.exports = sendemail;
-
-

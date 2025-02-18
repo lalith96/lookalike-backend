@@ -85,6 +85,7 @@ postRouter.put('/updatePost',async(req,res)=>{
     }
 })
 
+
 //toggleLike 
 postRouter.post('/toggleLike',async(req,res)=>{
     const onOrOff=req.body.toggleLike;
@@ -105,8 +106,8 @@ postRouter.post('/toggleLike',async(req,res)=>{
         const result=await postModel.findByIdAndUpdate({_id:postId},onOrOff=="ON"?addlike:removeLike,{new:true}).populate('profile')
 
         //add into alert profileId --loggedinuser  result.profile is target /receiver post
-
-        if(profileId!=result.profile._id && onOrOff=="ON"){
+  
+        if(profileId!=result.profile._id.toString() && onOrOff=="ON"){
             alertSave("you liked post of ","liked your post",result.profile._id,profileId,result.profile.username,username,postId);
         }else if(onOrOff=="OFF"){
             const alertDeleteData=await alertModel.deleteOne({postId:postId});
@@ -133,7 +134,7 @@ postRouter.post('/addComment',async(req,res)=>{
     const {comment}=req.body;
     try{
         //add in comments  db 
-        const commentData=new commentModel({postId,comment})
+        const commentData=new commentModel({postId,comment,commentByProfileId:profileId,commentByProfileName:username})
         await commentData.save();
         console.log("comment done")
         //add in posts db with the commentid 
@@ -141,8 +142,10 @@ postRouter.post('/addComment',async(req,res)=>{
         const postResult=await postModel.findByIdAndUpdate({_id:postId},{$push:{commentArray:commentid},$inc:{commentCount:1}},{new:true}).populate('profile')
         console.log("post done")
         //add in alerts 
-        alertSave("you have commented on post","commented on your post",postResult.profile._id,profileId,postResult.profile.username,username,postId,commentid);
-        console.log("alert done")
+        if(postResult && profileId!=postResult.profile._id.toString()){
+            alertSave("you have commented on post","commented on your post",postResult.profile._id,profileId,postResult.profile.username,username,postId,commentid);
+            console.log("alert done")
+        }
         res.status(200).send({'success':true,"message":'Comment Added Successfully',"result":postResult});
     }catch(err){
         console.log(err);
@@ -152,12 +155,17 @@ postRouter.post('/addComment',async(req,res)=>{
 
 postRouter.put('/updateComment',async (req,res)=>{
     const {comment}=req.body;
+    const {profileId,username}=req;
     const commentId=req.query.commentId;
     
     try{
         //update comment table
-        const commentData=await commentModel.findByIdAndUpdate({_id:commentId},{comment},{new:true});
-        res.status(200).send({'success':false,"message":'Comment Added Successfully',"result":commentData});
+        const commentData=await commentModel.findByIdAndUpdate({_id:commentId,commentByProfileId:profileId},{comment,commentByProfileName:username},{new:true});
+        if(commentData){
+            res.status(200).send({'success':false,"message":'Comment Added Successfully',"result":commentData});
+        }else{
+            res.status(400).send({'success':false,"message":'Invalid access'});
+        }
     }catch(err){
         console.log(err);
         res.status(400).send({'success':false,"message":'Error while updating comment',"errorMsg":err});
@@ -168,22 +176,39 @@ postRouter.put('/updateComment',async (req,res)=>{
 //deletecomment
 postRouter.delete('/deleteComment',async(req,res)=>{
     const commentId=req.query.commentId;
+    const {profileId,username}=req;
+
     try{
         //add in comments  db 
-        const commentData=await commentModel.findByIdAndDelete({_id:commentId});
+        const commentData=await commentModel.findByIdAndDelete({_id:commentId,commentByProfileId:profileId});
         console.log(commentData);
         //add in posts db with the commentid 
-        const postId=commentData.postId;
-        const postResult=await postModel.findByIdAndUpdate({_id:postId},{$pull:{commentArray:commentId},$inc:{commentCount:-1}},{new:true}).populate('profile')
-         
-        //delete in alerts
-        await alertModel.deleteOne({commentId});
-        res.status(200).send({'success':true,"message":'Comment Deleted Successfully',"result":postResult});
+        if(commentData){
+            const postId=commentData.postId;
+            const postResult=await postModel.findByIdAndUpdate({_id:postId},{$pull:{commentArray:commentId},$inc:{commentCount:-1}},{new:true}).populate('profile')
+            
+            //delete in alerts
+            await alertModel.deleteOne({commentId});
+            res.status(200).send({'success':true,"message":'Comment Deleted Successfully',"result":postResult});
+        }else{
+            res.status(400).send({'success':false,"message":'Error while deleting comment'});
+        }
     }catch(err){
         console.log(err);
         res.status(400).send({'success':false,"message":'Error while deleting comment',"errorMsg":err});
     }
 })
+
+postRouter.get("/getComments",async(req,res)=>{
+    try{
+        const postId=req.query.postId;
+        const comments=await commentModel.find({postId:postId});
+        res.status(200).send({'success':true,"message":'Comment Retrieved Successfully',"result":comments});
+    }catch(err){
+        res.status(400).send({'success':false,"message":'Error Retrieving Comments',"errorMsg":err});
+    }
+});
+
 
 async function  alertSave(sendermsg,receivermsg,receiverProfileId,senderProfileId,receiverusername,senderusername,postId,commentId){
     const senderMsg={

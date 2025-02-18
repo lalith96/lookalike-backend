@@ -67,16 +67,21 @@ profileRouter.post('/openProfile',async(req,res)=>{
 
     //check targetprofileid is present in following array of profileid if following , send posts array .
     try{
-        const resultObj=await profileModel.findOne({_id:targetProfileId,blockedByProfiles:profileId}).populate({path:'user',select:['-password']}); 
-        const following=resultObj.following;
-        const result = resultObj.toObject();
-        if(following && following.includes(profileId)){
-            result.isFollowing="Y";
-        }else{
-            result['isFollowing']="N";
-        }
-        console.log(result)
-        res.status(200).send({'success':true,"message":'Open Profile API successful',"result":result});
+        const resultObj=await profileModel.findOne({_id:targetProfileId,blockedByProfiles:{ $nin: [profileId] }}).populate({path:'user',select:['-password'],path:'posts'}); 
+        if(resultObj){
+            const following=resultObj.following;
+            const result = resultObj.toObject();
+            if(following && following.includes(profileId)){
+                result.isFollowing="Y";
+            }else{
+                result['isFollowing']="N";
+            }
+            console.log(result)
+            res.status(200).send({'success':true,"message":'Open Profile API successful',"result":result});
+       }else{
+        res.status(400).send({'success':false,"message":'Cannot open profile'});
+
+       }
     }catch(err){
         console.log(err);
         res.status(400).send({'success':false,"message":'Error Opening profile',"errorMsg":err});
@@ -124,6 +129,8 @@ profileRouter.post('/sendRequest',async(req,res)=>{
   }
 })
 
+
+
 profileRouter.post('/unFollowRequest',async(req,res)=>{
     const {profileId}=req;
     const {targetProfileId}=req.body;
@@ -155,10 +162,12 @@ profileRouter.post('/blockProfile',async(req,res)=>{
         let profileResult=await profileModel.findById({_id:profileId});
         let targetProfileResult=await profileModel.findById({_id:targetProfileId});
 
-        let blockingProfileUpdates=updateObj(profileResult,targetProfileId,"blockedProfiles");
+        let blockingProfileUpdates=updateObj(profileResult,targetProfileId);
+        blockingProfileUpdates={...blockingProfileUpdates,$push:{blockedProfiles:targetProfileId}};
         let result=await profileModel.findByIdAndUpdate({_id:profileId},blockingProfileUpdates,{new:true});
 
-        blockingProfileUpdates=updateObj(targetProfileResult,profileId,"blockedByProfiles");
+        blockingProfileUpdates=updateObj(targetProfileResult,profileId);
+        blockingProfileUpdates={...blockingProfileUpdates,$push:{blockedByProfiles:profileId}};
         result=await profileModel.findByIdAndUpdate({_id:targetProfileId},blockingProfileUpdates,{new:true});
         res.status(200).send({'success':true,"message":'Blocked successfully'});
     }catch(err){
@@ -186,7 +195,7 @@ profileRouter.post('/unBlockProfile',async(req,res)=>{
 })
 
 
-const updateObj=(result,pid,field)=>{
+const updateObj=(result,pid)=>{
     let followersArray=result.followers;
         let isFollower=followersArray.includes(new ObjectId(pid));
         let followingArray=result.following;
@@ -207,8 +216,7 @@ const updateObj=(result,pid,field)=>{
                 followersCount:followerField,
                 followingCount:followingField
             },
-            $pull:{followers:pid,following:pid},
-            $push:{field:pid}
+            $pull:{followers:pid,following:pid}
         }
 
         return blockingProfileUpdates;

@@ -8,7 +8,10 @@ const postsSchema=new mongoose.Schema({
     img:[String],
     description:String,
     location:String,
-    likeCount:Number,
+    likeCount:{
+        type:Number,
+        min:1
+    },
     likeArray:[
         {
             profileId:{
@@ -18,7 +21,10 @@ const postsSchema=new mongoose.Schema({
             username:String
         }
     ],
-    commentCount:Number,
+    commentCount:{
+        type:Number,
+        min:1
+    },
     commentArray:[
         {
             type:mongoose.Schema.Types.ObjectId,

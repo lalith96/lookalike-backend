@@ -21,11 +21,16 @@ settingsRouter.get("/",async(req,res)=>{
 
     //get all profiles except a particular profile.
     const profileId=userData.profile;
+    const blockedProfiles=userData.profile.blockedProfiles;
     let profiles=await profileModel.find({
         _id:{$ne:profileId},visibility:true
     }).populate('user');
 
-    // profiles=profiles.filter((eachProfile)=>eachProfile.user.visibility);
+    profiles=profiles.filter((eachProfile)=>{
+        if(!blockedProfiles.includes(eachProfile._id)){
+            return eachProfile;
+        }
+    });
     console.log(profiles);
 
     //your account setup done 
@@ -192,13 +197,13 @@ settingsRouter.post('/sendProfiles',async (req,res)=>{
             //form input receivermsg
             const receiverMsg={
                 msg:"Shared Profile By",
-                profileId,
+                profileId:new ObjectId(profileId),
                 username
             }
 
             console.log("rec")
             const alertMsg={
-                sender:profileId,
+                sender:new ObjectId(profileId),
                 receiver:new ObjectId(eachProfileId),
                 senderMsg,
                 receiverMsg

@@ -5,7 +5,12 @@ const commentSchema=new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"posts"
     },
-    comment:String
+    comment:String,
+    commentByProfileId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"profiles"
+    },
+    commentByProfileName:String
 })
 
 const commentModel = mongoose.model("comments", commentSchema);

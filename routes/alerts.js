@@ -38,11 +38,11 @@ alertRouter.post('/acceptrejectRequest',async(req,res)=>{
                 $inc: {followersCount: 1}
             });
 
-            res.status(200).send({'success':true,"message":'Request Accepted and Updated Profiles'});
+            res.status(200).send({'success':true,"message":'Request Accepted and Updated Profiles',"result":alertRes});
             
         }else{
             const alertRes=await alertModel.findOneAndDelete({_id:alertId});
-            res.status(200).send({'success':true,"message":'Request Deleted Successfully'});
+            res.status(200).send({'success':true,"message":'Request Deleted Successfully',"result":alertRes});
         }
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err});
@@ -77,7 +77,7 @@ alertRouter.post('/followBackRequest' ,async(req,res)=>{
             $inc: {followingCount: 1}
         });
 
-        res.status(200).send({'success':true,"message":'Followe Back Completed and Updated Profiles'});
+        res.status(200).send({'success':true,"message":'Request Accepted and Updated Profiles',"result":alertRes});
 
     }catch(err){
         res.status(400).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err});
