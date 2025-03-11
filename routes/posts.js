@@ -29,7 +29,7 @@ postRouter.post("/addPost",async (req,res)=>{
         res.status(200).send({'success':true,"message":'post added successfully',"result":profileRes})
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error adding post',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error adding post',"errorMsg":err.message});
     }
 });
 
@@ -53,10 +53,10 @@ postRouter.delete('/deletePost',async(req,res)=>{
             res.status(200).send({'success':true,"message":'Post Deleted Successfully',"result":result});
             return;
         }
-        res.status(400).send({'success':false,"message":'Invalid Access'});
+        res.status(500).send({'success':false,"message":'Invalid Access'});
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while deleting post',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while deleting post',"errorMsg":err.message});
     }
 })
 
@@ -78,10 +78,10 @@ postRouter.put('/updatePost',async(req,res)=>{
             res.status(200).send({'success':true,"message":'Post Updated Successfully',"result":result});
             return;
         }
-        res.status(400).send({'success':false,"message":'Invalid Access'});
+        res.status(500).send({'success':false,"message":'Invalid Access'});
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while updating post',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while updating post',"errorMsg":err.message});
     }
 })
 
@@ -119,10 +119,10 @@ postRouter.post('/toggleLike',async(req,res)=>{
             res.status(200).send({'success':true,"message":'Likes Updated Successfully',"result":result});
             return;
         }
-        res.status(400).send({'success':false,"message":'Invalid Access'});
+        res.status(500).send({'success':false,"message":'Invalid Access'});
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while Liking post',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while Liking post',"errorMsg":err.message});
     }
 })
 
@@ -149,7 +149,7 @@ postRouter.post('/addComment',async(req,res)=>{
         res.status(200).send({'success':true,"message":'Comment Added Successfully',"result":postResult});
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while adding comment',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while adding comment',"errorMsg":err.message});
     }
 })
 
@@ -164,11 +164,11 @@ postRouter.put('/updateComment',async (req,res)=>{
         if(commentData){
             res.status(200).send({'success':false,"message":'Comment Added Successfully',"result":commentData});
         }else{
-            res.status(400).send({'success':false,"message":'Invalid access'});
+            res.status(500).send({'success':false,"message":'Invalid access'});
         }
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while updating comment',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while updating comment',"errorMsg":err.message});
     }
 })
 
@@ -191,11 +191,11 @@ postRouter.delete('/deleteComment',async(req,res)=>{
             await alertModel.deleteOne({commentId});
             res.status(200).send({'success':true,"message":'Comment Deleted Successfully',"result":postResult});
         }else{
-            res.status(400).send({'success':false,"message":'Error while deleting comment'});
+            res.status(500).send({'success':false,"message":'Error while deleting comment'});
         }
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while deleting comment',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while deleting comment',"errorMsg":err.message});
     }
 })
 
@@ -205,7 +205,7 @@ postRouter.get("/getComments",async(req,res)=>{
         const comments=await commentModel.find({postId:postId});
         res.status(200).send({'success':true,"message":'Comment Retrieved Successfully',"result":comments});
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Retrieving Comments',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Retrieving Comments',"errorMsg":err.message});
     }
 });
 

@@ -69,7 +69,7 @@ settingsRouter.post('/dobUpdate',async(req,res)=>{
         const userData=await userModel.findOneAndUpdate({_id:userId},{dob:dob},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'DOB Updated successfully',"result":userData})
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Date Of Birth',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Date Of Birth',"errorMsg":err.message});
     }
     
 })
@@ -83,7 +83,7 @@ settingsRouter.post('/genderUpdate',async(req,res)=>{
         const userData=await userModel.findOneAndUpdate({_id:userId},{gender},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'Gender Updated successfully',"result":userData})
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Gender',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Gender',"errorMsg":err.message});
     }
 })
 
@@ -94,7 +94,7 @@ settingsRouter.post('/countryRegion',async(req,res)=>{
         const userData=await userModel.findOneAndUpdate({_id:userId},{country},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'Country/Region Updated successfully',"result":userData})
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Country/Region',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Country/Region',"errorMsg":err.message});
     }
 })
 
@@ -105,7 +105,7 @@ settingsRouter.post('/language',async(req,res)=>{
         const userData=await userModel.findOneAndUpdate({_id:userId},{language},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'Language Updated successfully',"result":userData})
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Language',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Language',"errorMsg":err.message});
     }
 })
 
@@ -122,7 +122,7 @@ settingsRouter.post('/emailIdUpdate',async(req,res)=>{
       userData.token=token;
       res.status(200).send({'success':true,"message":'Email Updated successfully',"result":userData})
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Email',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Email',"errorMsg":err.message});
     }
 })
 
@@ -139,10 +139,10 @@ settingsRouter.post('/passwordUpdate',async(req,res)=>{
             res.cookie('token',token);
             res.status(200).send({'success':true,"message":'Password Updated Successfully',"result":userData});
         }else{
-            res.status(400).send({'success':false,"message":'Wrong Password'});
+            res.status(500).send({'success':false,"message":'Wrong Password'});
         }
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Password',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Password',"errorMsg":err.message});
     }
 })
 
@@ -153,7 +153,7 @@ settingsRouter.post('/themeUpdate',async(req,res)=>{
         const userData=await userModel.findOneAndUpdate({_id:userId},{theme:theme},{new:true}).select('-password');  
         res.status(200).send({'success':true,"message":'Theme Updated successfully',"result":userData})
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Theme',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Theme',"errorMsg":err.message});
     }
 })
 
@@ -164,7 +164,7 @@ settingsRouter.post('/profileVisibilty',async(req,res)=>{
         const profileData=await profileModel.findByIdAndUpdate(profileId,{visibility:visibility},{new:true});
         res.status(200).send({'success':true,"message":'Visibility Updated successfully',"result":profileData})
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Visibility',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Visibility',"errorMsg":err.message});
     }
 })
 
@@ -218,7 +218,7 @@ settingsRouter.post('/sendProfiles',async (req,res)=>{
         res.status(200).send({'success':true,"message":'Profiles Shared Successfully'})
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error Sharing profiles',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Sharing profiles',"errorMsg":err.message});
     }
 })
 

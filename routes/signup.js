@@ -24,11 +24,11 @@ router.post("/", async (req, res) => {
     } = req.body);
     
     //check if user already present
-    let isuserPresent = await userModel.findOne({$or:[{email,number}]});
+    let isuserPresent = await userModel.findOne({$or:[{email:email},{number:number}]});
     console.log(isuserPresent);
     if(isuserPresent){
       
-      res.status(200).send({'success':false,"message":'User Already signed Up'});
+      res.status(500).send({'success':false,"message":'User Already signed Up'});
     }else{
       const user_model = new userModel(userdata);
       const result = await user_model.save();
@@ -37,7 +37,7 @@ router.post("/", async (req, res) => {
       // save profile and then update  user also .
       const userId={
         user:result._id,
-        username:fullname
+        username:email.split("@")[0]
       }
   
       const profileData=new profileModel(userId);
@@ -50,7 +50,7 @@ router.post("/", async (req, res) => {
     }
   }catch(err){
     console.log(err);
-    res.status(400).send({'success':false,"message":"Error Signing Up","error":err})
+    res.status(400).send({'success':false,"message":"Error Signing Up","error":err.message})
   }
 });
 

@@ -16,7 +16,7 @@ profileRouter.post("/editName",async (req,res)=>{
         res.status(200).send({'success':true,"message":'name updated successfully',"result":userData})
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error Updating name',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating name',"errorMsg":err.message});
     }
 });
 
@@ -28,7 +28,7 @@ profileRouter.post("/editUserName",async (req,res)=>{
         res.status(200).send({'success':true,"message":'username updated successfully',"result":profileResp})
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error Updating username',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating username',"errorMsg":err.message});
     }
 });
 
@@ -41,7 +41,7 @@ profileRouter.post("/editBio",async (req,res)=>{
         res.status(200).send({'success':true,"message":'Bio updated successfully',"result":profileData})
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error Updating Bio',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Bio',"errorMsg":err.message});
     }
 });
 
@@ -54,7 +54,7 @@ profileRouter.post("/updateImage",async (req,res)=>{
         res.status(200).send({'success':true,"message":'ProfileImage updated successfully',"result":profileData})
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error Updating ProfileImage',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating ProfileImage',"errorMsg":err.message});
     }
 });
 
@@ -67,7 +67,8 @@ profileRouter.post('/openProfile',async(req,res)=>{
 
     //check targetprofileid is present in following array of profileid if following , send posts array .
     try{
-        const resultObj=await profileModel.findOne({_id:targetProfileId,blockedByProfiles:{ $nin: [profileId] }}).populate({path:'user',select:['-password'],path:'posts'}); 
+        const resultObj=await profileModel.findOne({_id:targetProfileId,blockedByProfiles:{ $nin: [profileId] }}).populate([{path:'user',select:['-password']},{path:'posts'}]); 
+        console.log(resultObj);
         if(resultObj){
             const following=resultObj.following;
             const result = resultObj.toObject();
@@ -79,12 +80,12 @@ profileRouter.post('/openProfile',async(req,res)=>{
             console.log(result)
             res.status(200).send({'success':true,"message":'Open Profile API successful',"result":result});
        }else{
-        res.status(400).send({'success':false,"message":'Cannot open profile'});
+        res.status(500).send({'success':false,"message":'Cannot open profile'});
 
        }
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error Opening profile',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Opening profile',"errorMsg":err.message});
     }
    
 });
@@ -125,7 +126,7 @@ profileRouter.post('/sendRequest',async(req,res)=>{
         res.status(200).send({'success':true,"message":'Request Sent',"result":result});
   }catch(err){
     console.log(err);
-    res.status(400).send({'success':false,"message":'Error while Sending Request',"errorMsg":err});
+    res.status(500).send({'success':false,"message":'Error while Sending Request',"errorMsg":err.message});
   }
 })
 
@@ -146,7 +147,7 @@ profileRouter.post('/unFollowRequest',async(req,res)=>{
 
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while Unfollowing',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while Unfollowing',"errorMsg":err.message});
     }
 
 })
@@ -172,7 +173,7 @@ profileRouter.post('/blockProfile',async(req,res)=>{
         res.status(200).send({'success':true,"message":'Blocked successfully'});
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while Blocking',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while Blocking',"errorMsg":err.message});
     }
 
 });
@@ -189,7 +190,7 @@ profileRouter.post('/unBlockProfile',async(req,res)=>{
         res.status(200).send({'success':true,"message":'UnBlock Successfull'});
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error while unblocking',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error while unblocking',"errorMsg":err.message});
     }
 
 })

@@ -38,7 +38,7 @@ router.post("/getcode", async (req, res) => {
       res.status(200).send({'success':false,"message":'Invalid Email'});
     }
   }catch(err){
-    res.status(400).send({'success':false,"message":'Error sending OTP',"error":err});
+    res.status(500).send({'success':false,"message":'Error sending OTP',"error":err.message});
   }
 });
 
@@ -63,7 +63,7 @@ router.post("/verifycode", async (req, res) => {
     res.status(200).send({'success':false,"message":'No otps found Request OTP again'});
   }
   }catch(err){
-    res.status(400).send({'success':false,"message":'Error Verfiying OTP',"error":err});
+    res.status(500).send({'success':false,"message":'Error Verfiying OTP',"error":err.message});
   }
 });
 
@@ -76,11 +76,11 @@ router.post('/resetPassword',async(req,res)=>{
         if(userData){
           res.status(200).send({'success':true,"message":'Password Updated Successfully',"result":userData});
         }else{
-          res.status(400).send({'success':false,"message":'User Not  Founnd'});
+          res.status(500).send({'success':false,"message":'User Not  Founnd'});
         }
     }catch(err){
       console.log(err);
-    res.status(400).send({'success':false,"message":'Error Updating Password',"errorMsg":err});
+    res.status(500).send({'success':false,"message":'Error Updating Password',"errorMsg":err.message});
   }
 })
 

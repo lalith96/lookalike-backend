@@ -26,12 +26,12 @@ router.post("/", async (req, res) => {
       res.status(200).send( {'success':true,"message":'Login  Successful',"result":response});
     } else {
       res.clearCookie('token');
-      res.status(400).send( {'success':false,"message":'Wrong password please try again'});
+      res.status(500).send( {'success':false,"message":'Wrong password please try again'});
     }
   }catch(err){
     console.log(err);
     res.clearCookie('token');
-    res.status(400).send({'success':false,"message":'Error Logging in',"error":err})
+    res.status(500).send({'success':false,"message":'Error Logging in',"error":err.message})
   }
 });
 

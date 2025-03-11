@@ -45,7 +45,7 @@ alertRouter.post('/acceptrejectRequest',async(req,res)=>{
             res.status(200).send({'success':true,"message":'Request Deleted Successfully',"result":alertRes});
         }
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err.message});
     }
 
 });
@@ -80,7 +80,7 @@ alertRouter.post('/followBackRequest' ,async(req,res)=>{
         res.status(200).send({'success':true,"message":'Request Accepted and Updated Profiles',"result":alertRes});
 
     }catch(err){
-        res.status(400).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err});
+        res.status(500).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err.message});
     }
 });
 
@@ -99,7 +99,7 @@ alertRouter.get('/',async(req,res)=>{
         res.status(200).send({'success':true,"message":'Profiles Retrived Successfullt',"result":result});
     }catch(err){
         console.log(err);
-        res.status(400).send({'success':false,"message":'Error Retrieving Alerts',"errorMsg":err})
+        res.status(500).send({'success':false,"message":'Error Retrieving Alerts',"errorMsg":err.message})
     }
 })
 
