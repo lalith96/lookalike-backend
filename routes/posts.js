@@ -1,6 +1,7 @@
 const express=require('express');
 const postRouter=express.Router();
 const {ObjectId}=require('mongodb');
+const mongoose = require("mongoose");
 
 const profileModel=require('../models/profile_model');
 const postModel=require('../models/posts_model');
@@ -11,8 +12,10 @@ const alertModel = require('../models/alerts_model');
 postRouter.post("/addPost",async (req,res)=>{
     const {postImages,location,description}=req.body;
     const profileId=req.profileId;
-
+    const session = await mongoose.startSession();
+    
     try{
+        session.startTransaction();
         //add into posts array.
         const postData={
             profile:profileId,
@@ -22,33 +25,39 @@ postRouter.post("/addPost",async (req,res)=>{
         }
         
         const post_model = new postModel(postData);
-        const postResponse = await post_model.save();
+        const postResponse = await post_model.save({session});
 
         //add in profile record in posts array
-        const profileRes=await profileModel.findOneAndUpdate({_id:profileId},{$push:{posts:postResponse._id}},{new:true}).populate({path:'user',select:['-password']}); 
+        const profileRes=await profileModel.findOneAndUpdate({_id:profileId},{$push:{posts:postResponse._id}},{new:true,session}).populate({path:'user',select:['-password']}); 
+        await session.commitTransaction();
         res.status(200).send({'success':true,"message":'post added successfully',"result":profileRes})
     }catch(err){
         console.log(err);
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error adding post',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 });
 
 postRouter.delete('/deletePost',async(req,res)=>{
-
+    const session = await mongoose.startSession();
     try{
+        session.startTransaction();
         //delete comments 
         const postId=req.query.postId;
         const {profileId}=req;
         console.log(postId+" "+profileId)
         
         //delete post
-       const postData= await postModel.findOneAndDelete({_id:postId,profile:profileId});
+       const postData= await postModel.findOneAndDelete({_id:postId,profile:profileId},{session});
        
        //delete comments:
-        const commentsData=postData?await commentModel.deleteMany({postId:postId}):null;
+        const commentsData=postData?await commentModel.deleteMany({postId:postId},{session}):null;
 
         //delet post from profile 
-        const result=postData?await profileModel.findOneAndUpdate({_id:profileId},{$pull:{posts:postId}},{new:true}):null;
+        const result=postData?await profileModel.findOneAndUpdate({_id:profileId},{$pull:{posts:postId}},{new:true,session}):null;
+       await session.commitTransaction()
         if(result){
             res.status(200).send({'success':true,"message":'Post Deleted Successfully',"result":result});
             return;
@@ -56,7 +65,10 @@ postRouter.delete('/deletePost',async(req,res)=>{
         res.status(500).send({'success':false,"message":'Invalid Access'});
     }catch(err){
         console.log(err);
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while deleting post',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 })
 
@@ -85,14 +97,51 @@ postRouter.put('/updatePost',async(req,res)=>{
     }
 })
 
+postRouter.post('/savePost',async(req,res)=>{
+    const {profileId}=req;
+    const {postId}=req.body;
+    
+    try{
+        const result=await profileModel.findOneAndUpdate({_id:profileId}, { $addToSet: { savedPosts: postId } },{new:true});
+        res.status(200).send({'success':true,"message":'Saved Post Successfully',"result":result});
+    }catch(err){
+        res.status(500).send({'success':false,"message":'Error while saving post',"errorMsg":err.message});
+    }
+});
+
+postRouter.post('/unsavePost',async(req,res)=>{
+    const {profileId}=req;
+    const {postId}=req.body;
+    
+    try{
+        const result=await profileModel.findOneAndUpdate({_id:profileId},{$pull:{savedPosts:postId}},{new:true});
+        res.status(200).send({'success':true,"message":'UnSaved Post Successfully',"result":result});
+    }catch(err){
+        res.status(500).send({'success':false,"message":'Error while unsaving post',"errorMsg":err.message});
+    }
+});
+
+postRouter.get('/getSavedPosts',async(req,res)=>{
+    const {profileId}=req;
+    const {postId}=req.body;
+    
+    try{
+        const result=await profileModel.find({_id:profileId}).populate('posts');
+        res.status(200).send({'success':true,"message":'Posts Retrieved Successfully',"result":result[0].savedPosts});
+    }catch(err){
+        res.status(500).send({'success':false,"message":'Error while retrieving posts',"errorMsg":err.message});
+    }
+});
 
 //toggleLike 
 postRouter.post('/toggleLike',async(req,res)=>{
     const onOrOff=req.body.toggleLike;
     const postId=req.query.postId;
     const {profileId,username}=req;
+    const session = await mongoose.startSession();
 
     try{
+        session.startTransaction();
     //for particular postId,insert profileand username
         const addlike={
             $inc:{likeCount:1},
@@ -103,18 +152,17 @@ postRouter.post('/toggleLike',async(req,res)=>{
             $inc:{likeCount:-1},
             $pull:{likeArray:{profileId,username}}
         }
-        const result=await postModel.findByIdAndUpdate({_id:postId},onOrOff=="ON"?addlike:removeLike,{new:true}).populate('profile')
+        const result=await postModel.findByIdAndUpdate({_id:postId},onOrOff=="ON"?addlike:removeLike,{new:true,session}).populate('profile')
 
         //add into alert profileId --loggedinuser  result.profile is target /receiver post
   
         if(profileId!=result.profile._id.toString() && onOrOff=="ON"){
-            alertSave("you liked post of ","liked your post",result.profile._id,profileId,result.profile.username,username,postId);
+            alertSave("you liked post of ","liked your post",result.profile._id,profileId,result.profile.username,username,postId,session);
         }else if(onOrOff=="OFF"){
-            const alertDeleteData=await alertModel.deleteOne({postId:postId});
+            const alertDeleteData=await alertModel.deleteOne({postId:postId},{session});
             console.log(alertDeleteData)
         }
-
-
+       await session.commitTransaction()
         if(result){
             res.status(200).send({'success':true,"message":'Likes Updated Successfully',"result":result});
             return;
@@ -122,7 +170,10 @@ postRouter.post('/toggleLike',async(req,res)=>{
         res.status(500).send({'success':false,"message":'Invalid Access'});
     }catch(err){
         console.log(err);
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while Liking post',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 })
 
@@ -132,24 +183,30 @@ postRouter.post('/addComment',async(req,res)=>{
     const postId=req.query.postId;
     const {profileId,username}=req;
     const {comment}=req.body;
+    const session = await mongoose.startSession();
     try{
         //add in comments  db 
+        session.startTransaction();
         const commentData=new commentModel({postId,comment,commentByProfileId:profileId,commentByProfileName:username})
         await commentData.save();
         console.log("comment done")
         //add in posts db with the commentid 
         const commentid=commentData._id;
-        const postResult=await postModel.findByIdAndUpdate({_id:postId},{$push:{commentArray:commentid},$inc:{commentCount:1}},{new:true}).populate('profile')
+        const postResult=await postModel.findByIdAndUpdate({_id:postId},{$push:{commentArray:commentid},$inc:{commentCount:1}},{new:true,session}).populate('profile')
         console.log("post done")
         //add in alerts 
         if(postResult && profileId!=postResult.profile._id.toString()){
-            alertSave("you have commented on post","commented on your post",postResult.profile._id,profileId,postResult.profile.username,username,postId,commentid);
+            alertSave("you have commented on post","commented on your post",postResult.profile._id,profileId,postResult.profile.username,username,postId,commentid,session);
             console.log("alert done")
         }
+       await session.commitTransaction();
         res.status(200).send({'success':true,"message":'Comment Added Successfully',"result":postResult});
     }catch(err){
         console.log(err);
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while adding comment',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 })
 
@@ -177,25 +234,31 @@ postRouter.put('/updateComment',async (req,res)=>{
 postRouter.delete('/deleteComment',async(req,res)=>{
     const commentId=req.query.commentId;
     const {profileId,username}=req;
-
+    const session = await mongoose.startSession();
     try{
+        session.startTransaction();
         //add in comments  db 
-        const commentData=await commentModel.findByIdAndDelete({_id:commentId,commentByProfileId:profileId});
+        const commentData=await commentModel.findByIdAndDelete({_id:commentId,commentByProfileId:profileId},{session});
         console.log(commentData);
         //add in posts db with the commentid 
         if(commentData){
             const postId=commentData.postId;
-            const postResult=await postModel.findByIdAndUpdate({_id:postId},{$pull:{commentArray:commentId},$inc:{commentCount:-1}},{new:true}).populate('profile')
+            const postResult=await postModel.findByIdAndUpdate({_id:postId},{$pull:{commentArray:commentId},$inc:{commentCount:-1}},{new:true,session},{}).populate('profile')
             
             //delete in alerts
-            await alertModel.deleteOne({commentId});
+            await alertModel.deleteOne({commentId},{session});
+            await session.commitTransaction();
             res.status(200).send({'success':true,"message":'Comment Deleted Successfully',"result":postResult});
         }else{
+            await session.commitTransaction();
             res.status(500).send({'success':false,"message":'Error while deleting comment'});
         }
     }catch(err){
         console.log(err);
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while deleting comment',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 })
 
@@ -210,7 +273,7 @@ postRouter.get("/getComments",async(req,res)=>{
 });
 
 
-async function  alertSave(sendermsg,receivermsg,receiverProfileId,senderProfileId,receiverusername,senderusername,postId,commentId){
+async function  alertSave(sendermsg,receivermsg,receiverProfileId,senderProfileId,receiverusername,senderusername,postId,commentId,session){
     const senderMsg={
         msg:sendermsg,
         profileId:new ObjectId(receiverProfileId),
@@ -234,7 +297,7 @@ async function  alertSave(sendermsg,receivermsg,receiverProfileId,senderProfileI
     }
 
     const alertData = new alertModel(alertMsg);
-    const alertResult = await alertData.save();
+    const alertResult = await alertData.save({session});
 }
 
 

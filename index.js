@@ -1,7 +1,10 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const cors=require('cors');
+const passport = require('passport');
 require("dotenv").config();
+require('./middleware/passport-setup');
 const login = require("./routes/login");
 const signup = require("./routes/signup");
 const code = require("./routes/code");
@@ -11,8 +14,9 @@ const profileRouter=require('./routes/profile');
 const searchRouter=require('./routes/search');
 const alertRouter=require('./routes/alerts');
 const postRouter=require('./routes/posts')
-
+const oAuthRouter=require('./routes/oauth')
 const jwtAuth=require('./middleware/auth');
+
 const cookieParser=require('cookie-parser');
 
 
@@ -21,6 +25,8 @@ app.use(express.json());
 
 
 app.use(cookieParser());
+app.use(cors());
+app.use(passport.initialize());
 
 mongoose
   .connect(process.env.DATABASE_URL, {
@@ -43,6 +49,7 @@ app.use("/api/profile",jwtAuth,profileRouter);
 app.use("/api/search",jwtAuth,searchRouter);
 app.use("/api/alerts",jwtAuth,alertRouter);
 app.use('/api/posts',jwtAuth,postRouter);
+app.use('/auth', oAuthRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

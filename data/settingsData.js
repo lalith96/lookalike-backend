@@ -5,7 +5,7 @@ const settings={
         "PersonalInformation":{
             "DateOfBirth":"01-01-1999",
             "Gender":"Other",
-            "Country/region":"India",
+            "Country-region":"India",
             "Language":"English"
         }
     },

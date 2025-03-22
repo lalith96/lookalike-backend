@@ -1,5 +1,6 @@
 const express=require('express');
 const {ObjectId}=require('mongodb');
+const mongoose = require("mongoose");
 
 const profileModel=require('../models/profile_model');
 const userModel=require('../models/user_model');
@@ -9,12 +10,14 @@ const alertModel=require('../models/alerts_model');
 const alertRouter=express.Router();
 
 alertRouter.post('/acceptrejectRequest',async(req,res)=>{
+    const session = await mongoose.startSession();
     const {alertId,senderId,receiverId,status}=req.body;
 
     //status is accepted then in sender profileid increase following count and in receiver increase followers count
 
     //getalertId record
     try{
+        session.startTransaction();
         if(status=='accepted'){
             //update alert message .
             const update = {
@@ -24,28 +27,31 @@ alertRouter.post('/acceptrejectRequest',async(req,res)=>{
                 }
               };
     
-            const alertRes=await alertModel.findOneAndUpdate({_id:alertId},update);
+            const alertRes=await alertModel.findOneAndUpdate({_id:alertId},update,{session});
 
             //update sender following count.
             const sendProfileId=await profileModel.findByIdAndUpdate({_id:senderId},{
                 $push:{following:new ObjectId(receiverId)},
                 $inc: {followingCount: 1}
-            });
+            },{session});
 
             //update receivers followers count
             const receiverProfileId=await profileModel.findByIdAndUpdate({_id:receiverId},{
                 $push:{followers:new ObjectId(senderId)},
                 $inc: {followersCount: 1}
-            });
-
+            },{session});
+            await session.commitTransaction();
             res.status(200).send({'success':true,"message":'Request Accepted and Updated Profiles',"result":alertRes});
-            
         }else{
-            const alertRes=await alertModel.findOneAndDelete({_id:alertId});
+            const alertRes=await alertModel.findOneAndDelete({_id:alertId},{session});
+            await session.commitTransaction();
             res.status(200).send({'success':true,"message":'Request Deleted Successfully',"result":alertRes});
         }
     }catch(err){
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 
 });
@@ -54,8 +60,10 @@ alertRouter.post('/acceptrejectRequest',async(req,res)=>{
 alertRouter.post('/followBackRequest' ,async(req,res)=>{
 
     const {alertId,senderId,receiverId}=req.body;
+    const session = await mongoose.startSession();
 
     try{
+        session.startTransaction();
         const update = {
             $set: {
             "senderMsg.msg": "Both are follwing Each Other",
@@ -63,24 +71,28 @@ alertRouter.post('/followBackRequest' ,async(req,res)=>{
             }
         };
 
-        const alertRes=await alertModel.findOneAndUpdate({_id:alertId},update);
+        const alertRes=await alertModel.findOneAndUpdate({_id:alertId},update,{session});
 
         //update sender following count.
         const sendProfileId=await profileModel.findByIdAndUpdate({_id:senderId},{
             $push:{followers:new ObjectId(receiverId)},
             $inc: {followersCount: 1}
-        });
+        },{session});
 
         //update receivers followers count
         const receiverProfileId=await profileModel.findByIdAndUpdate({_id:receiverId},{
             $push:{following:new ObjectId(senderId)},
             $inc: {followingCount: 1}
-        });
-
+        },{session});
+        await session.commitTransaction();
+        session.endSession();
         res.status(200).send({'success':true,"message":'Request Accepted and Updated Profiles',"result":alertRes});
 
     }catch(err){
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error Updating Profiles or Alerts',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 });
 

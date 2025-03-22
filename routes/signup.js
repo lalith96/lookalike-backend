@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt=require('bcrypt');
+const mongoose = require("mongoose");
 
 const  userModel  = require("../models/user_model");
 const infoModel=require('../models/info_model')
@@ -7,13 +9,7 @@ const profileModel=require("../models/profile_model");
 
 router.post("/", async (req, res) => {
   console.log("signup req");
-  // console.log(req.body);
-  // let info = await infoModel.findOne({});
-  // let id =1;
-  // if(info){
-  //   id = (info.totalusers = info.totalusers + 1);
-  // }
-  // console.log(id)
+  const session = await mongoose.startSession();
   try{
     let userdata = ({
       email,
@@ -22,7 +18,7 @@ router.post("/", async (req, res) => {
       password,
       gender,
     } = req.body);
-    
+    userdata.password=password!=null?await bcrypt.hash(password, 12):null;
     //check if user already present
     let isuserPresent = await userModel.findOne({$or:[{email:email},{number:number}]});
     console.log(isuserPresent);
@@ -30,8 +26,9 @@ router.post("/", async (req, res) => {
       
       res.status(500).send({'success':false,"message":'User Already signed Up'});
     }else{
+      session.startTransaction();
       const user_model = new userModel(userdata);
-      const result = await user_model.save();
+      const result = await user_model.save({ session });
   
   
       // save profile and then update  user also .
@@ -39,18 +36,21 @@ router.post("/", async (req, res) => {
         user:result._id,
         username:email.split("@")[0]
       }
-  
       const profileData=new profileModel(userId);
-      const profileRes=await profileData.save();
+      const profileRes=await profileData.save({ session });
   
       //sve profileid in user
-      const finalRes=await userModel.updateOne({_id:result._id},{profile:profileRes._id});
+      const finalRes=await userModel.updateOne({_id:result._id},{profile:profileRes._id},{session});
       // info.save();
+      await session.commitTransaction();
       res.status(200).send({'success':true,"message":'Sign Up Successful',"result":result});
     }
   }catch(err){
     console.log(err);
+    await session.abortTransaction();
     res.status(400).send({'success':false,"message":"Error Signing Up","error":err.message})
+  }finally{
+    session.endSession();
   }
 });
 

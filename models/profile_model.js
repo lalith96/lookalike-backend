@@ -27,6 +27,7 @@ const profileSchema=new mongoose.Schema({
     followers:[{ type: mongoose.Schema.Types.ObjectId, ref: 'profiles' }] ,
     following:[{ type: mongoose.Schema.Types.ObjectId, ref: 'profiles' }],
     posts:[{ type: mongoose.Schema.Types.ObjectId, ref: 'posts' }] ,
+    savedPosts:[{ type: mongoose.Schema.Types.ObjectId, ref: 'posts' }] ,
     blockedProfiles:[{type: mongoose.Schema.Types.ObjectId, ref: 'profiles'}],
     blockedByProfiles:[{type: mongoose.Schema.Types.ObjectId, ref: 'profiles'}]
 });

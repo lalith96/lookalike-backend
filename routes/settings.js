@@ -3,6 +3,8 @@ const jwt=require('jsonwebtoken')
 const cookieParser=require('cookie-parser')
 const dotenv=require('dotenv');
 const {ObjectId}=require('mongodb')
+const bcrypt=require('bcrypt');
+const mongoose = require("mongoose");
 
 const settingsRouter = express.Router();
 const {settings,termsOfUse,privacyPolicy}=require('../data/settingsData');
@@ -64,7 +66,7 @@ settingsRouter.get("/",async(req,res)=>{
 
 settingsRouter.post('/dobUpdate',async(req,res)=>{
     const userId=req.userID;
-    const dob=req.body.dob;
+    const dob=req.body.dob;    
     try{
         const userData=await userModel.findOneAndUpdate({_id:userId},{dob:dob},{new:true}).select('-password'); 
         res.status(200).send({'success':true,"message":'DOB Updated successfully',"result":userData})
@@ -132,9 +134,12 @@ settingsRouter.post('/passwordUpdate',async(req,res)=>{
     const oldPassword=req.body.oldPassword;
     const newPassword=req.body.newPassword;
     try{
-        const userPresent=await userModel.findOne({_id:userId,password:oldPassword},{new:true}).select('-password'); 
-        if(userPresent){
-            const userData=await userModel.findOneAndUpdate({_id:userId,password:oldPassword},{password:newPassword}).select('-password').populate('profile'); 
+        const userPresent=await userModel.findOne({_id:userId});
+        const result = userPresent && await bcrypt.compare(req.body.oldPassword, userPresent.password);
+        console.log(userPresent +" "+result)
+        if(result){
+            const password=await bcrypt.hash(newPassword, 12);
+            const userData=await userModel.findOneAndUpdate({_id:userId},{password:password}).select('-password').populate('profile'); 
             const token = generateToken(userData);
             res.cookie('token',token);
             res.status(200).send({'success':true,"message":'Password Updated Successfully',"result":userData});

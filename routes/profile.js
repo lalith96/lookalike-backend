@@ -1,5 +1,6 @@
 const express=require('express');
 const {ObjectId}=require('mongodb');
+const mongoose = require("mongoose");
 
 const profileModel=require('../models/profile_model');
 const userModel=require('../models/user_model');
@@ -135,19 +136,24 @@ profileRouter.post('/sendRequest',async(req,res)=>{
 profileRouter.post('/unFollowRequest',async(req,res)=>{
     const {profileId}=req;
     const {targetProfileId}=req.body;
+    const session = await mongoose.startSession();
 
     try{
+        session.startTransaction();
         //from sender  who is  unfollowing decrease following count and remove from array 
-        const senderData=await profileModel.findByIdAndUpdate({_id:profileId},{$inc:{followingCount:-1},$pull:{following:targetProfileId}});
+        const senderData=await profileModel.findByIdAndUpdate({_id:profileId},{$inc:{followingCount:-1},$pull:{following:targetProfileId}},{session});
 
          //from target  who is  getting unfollowed decrease followers count and remove from followers array 
-        const receiverData=await profileModel.findByIdAndUpdate({_id:targetProfileId},{$inc:{followersCount:-1},$pull:{followers:profileId}});
-
+        const receiverData=await profileModel.findByIdAndUpdate({_id:targetProfileId},{$inc:{followersCount:-1},$pull:{followers:profileId}},{session});
+        await session.commitTransaction();
         res.status(200).send({'success':true,"message":'Unfollowed successfully'});
 
     }catch(err){
         console.log(err);
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while Unfollowing',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 
 })
@@ -157,23 +163,29 @@ profileRouter.post('/unFollowRequest',async(req,res)=>{
 profileRouter.post('/blockProfile',async(req,res)=>{
     const {profileId}=req;
     const {targetProfileId}=req.body;
-
+    const session = await mongoose.startSession();
+   
     try{
-        //decrease followers and following count by 1  if they are following 
-        let profileResult=await profileModel.findById({_id:profileId});
-        let targetProfileResult=await profileModel.findById({_id:targetProfileId});
+        //decrease followers and following count by 1  if they are following
+        session.startTransaction(); 
+        let profileResult=await profileModel.findById({_id:profileId},{session});
+        let targetProfileResult=await profileModel.findById({_id:targetProfileId},{session});
 
         let blockingProfileUpdates=updateObj(profileResult,targetProfileId);
         blockingProfileUpdates={...blockingProfileUpdates,$push:{blockedProfiles:targetProfileId}};
-        let result=await profileModel.findByIdAndUpdate({_id:profileId},blockingProfileUpdates,{new:true});
+        let result=await profileModel.findByIdAndUpdate({_id:profileId},blockingProfileUpdates,{new:true,session});
 
         blockingProfileUpdates=updateObj(targetProfileResult,profileId);
         blockingProfileUpdates={...blockingProfileUpdates,$push:{blockedByProfiles:profileId}};
-        result=await profileModel.findByIdAndUpdate({_id:targetProfileId},blockingProfileUpdates,{new:true});
+        result=await profileModel.findByIdAndUpdate({_id:targetProfileId},blockingProfileUpdates,{new:true,session});
+        await session.commitTransaction();
         res.status(200).send({'success':true,"message":'Blocked successfully'});
     }catch(err){
         console.log(err);
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while Blocking',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 
 });
@@ -181,16 +193,22 @@ profileRouter.post('/blockProfile',async(req,res)=>{
 profileRouter.post('/unBlockProfile',async(req,res)=>{
     const {profileId}=req;
     const {targetProfileId}=req.body;
+    const session = await mongoose.startSession();
 
     try{
+        session.startTransaction(); 
         //remove from blockedprofiles in sender 
-        await profileModel.findByIdAndUpdate({_id:profileId},{$pull:{blockedProfiles:targetProfileId}});
+        await profileModel.findByIdAndUpdate({_id:profileId},{$pull:{blockedProfiles:targetProfileId}},{session});
         //remove from blockedBy in receiver
-        await profileModel.findByIdAndUpdate({_id:targetProfileId},{$pull:{blockedByProfiles:profileId}});
+        await profileModel.findByIdAndUpdate({_id:targetProfileId},{$pull:{blockedByProfiles:profileId}},{session});
+        await session.commitTransaction();
         res.status(200).send({'success':true,"message":'UnBlock Successfull'});
     }catch(err){
         console.log(err);
+        await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while unblocking',"errorMsg":err.message});
+    }finally{
+        session.endSession();
     }
 
 })

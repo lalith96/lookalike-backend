@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt=require('bcrypt');
+const mongoose = require("mongoose");
 
 const otpModel  = require("../models/otp_model");
 const userModel=require("../models/user_model");
@@ -8,7 +10,9 @@ const  sendemail  = require("../utils/sendemail");
 
 router.post("/getcode", async (req, res) => {
   console.log(req.body);
+  const session = await mongoose.startSession();
   try{
+    session.startTransaction();
     const email = req.body.email;
     const userResult=await userModel.find({email:email});
     if(userResult.length!=0){
@@ -22,7 +26,7 @@ router.post("/getcode", async (req, res) => {
       if (otpobj) {
         otpobj.otp = randnum;
         otpobj.time = date.getTime() + 600000;
-        const result = await otpobj.save();
+        const result = await otpobj.save({session});
       } else {
         let newotp = {
           email,
@@ -30,15 +34,20 @@ router.post("/getcode", async (req, res) => {
           time: date.getTime() + 600000,
         };
         const otpObj = new otpModel(newotp);
-        await otpObj.save();
+        await otpObj.save({session});
       }
       await sendemail(randnum, email);
+      await session.commitTransaction();
       res.status(200).send({'success':true,"message":'OTP Send Successfully'});
     }else{
+      await session.commitTransaction();
       res.status(200).send({'success':false,"message":'Invalid Email'});
     }
   }catch(err){
+    await session.abortTransaction();
     res.status(500).send({'success':false,"message":'Error sending OTP',"error":err.message});
+  }finally{
+    session.endSession();
   }
 });
 
@@ -69,7 +78,7 @@ router.post("/verifycode", async (req, res) => {
 
 router.post('/resetPassword',async(req,res)=>{
   const email=req.body.email;
-  const newPassword=req.body.newPassword;
+  const newPassword=await bcrypt.hash(req.body.newPassword, 12);
 
   try{
         const userData=await userModel.findOneAndUpdate({email},{password:newPassword}).select('-password').populate('profile'); 

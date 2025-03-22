@@ -1,32 +1,40 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt=require('bcrypt');
+
 const generateToken=require('../utils/token')
-
-
 const  userModel  = require("../models/user_model");
 
 router.post("/", async (req, res) => {
   console.log("inside login api");
   try{
-    const userData = await userModel.findOne({
-      $or: [{ email: req.body.email }, { number: req.body.number }],
-    }).populate('profile');
-    if (userData.password === req.body.password) {
-
-      const token = generateToken(userData);
-      res.cookie('token',token);
-      const response={
-        _id:userData._id,
-        profileId:userData.profile._id,
-        username:userData.profile.username,
-        token:token
+    let userData=null;
+    if(req.body.email){
+      userData = await userModel.findOne({email: req.body.email }).populate('profile');
+    }else{
+      userData = await userModel.findOne({number: req.body.number }).populate('profile');
+    }
+    console.log(userData);
+    if(userData){
+      const result = await bcrypt.compare(req.body.password, userData.password);
+      if (result) {
+        const token = generateToken(userData);
+        res.cookie('token',token);
+        const response={
+          _id:userData._id,
+          profileId:userData.profile._id,
+          username:userData.profile.username,
+          token:token
+        }
+        console.log(response);
+       
+        res.status(200).send( {'success':true,"message":'Login  Successful',"result":response});
+      } else {
+        res.clearCookie('token');
+        res.status(500).send( {'success':false,"message":'Wrong password please try again'});
       }
-      console.log(response);
-     
-      res.status(200).send( {'success':true,"message":'Login  Successful',"result":response});
-    } else {
-      res.clearCookie('token');
-      res.status(500).send( {'success':false,"message":'Wrong password please try again'});
+    }else{
+      res.status(500).send( {'success':false,"message":'Enter Valid Data'});
     }
   }catch(err){
     console.log(err);
