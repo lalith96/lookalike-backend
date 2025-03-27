@@ -2,7 +2,8 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 
 const postModel=require('../models/posts_model');
-const {renewSignedUrl}=require('./s3operations.middleware')
+const {renewSignedUrl,renewProfileImageSignedUrl}=require('./s3operations.middleware');
+const profileModel = require('../models/profile_model');
 
 
 const refreshSignedUrls=async()=>{
@@ -16,8 +17,12 @@ const refreshSignedUrls=async()=>{
     try{
         session.startTransaction();
         const expiringRecords = await postModel.find({expiresAt: { $lt: expirationThreshold, $gt: now }});
+        const profileImgExpiringRecords = await profileModel.find({expiresAt: { $lt: expirationThreshold, $gt: now }});
         if(expiringRecords.length>0){
             await renewSignedUrl(expiringRecords)
+        }
+        if(profileImgExpiringRecords.length>0){
+            await renewProfileImageSignedUrl(profileImgExpiringRecords)
         }
         await session.commitTransaction();
     }catch(err){

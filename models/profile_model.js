@@ -6,6 +6,8 @@ const profileSchema=new mongoose.Schema({
         ref:"users"
     },
     profileImg:String,
+    expiresAt:String,
+    profileImageUrl:String,
     bio:String,
     username: {
         type:String,

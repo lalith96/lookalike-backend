@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 const profileModel=require('../models/profile_model');
 const userModel=require('../models/user_model');
 const alertModel=require('../models/alerts_model');
+const upload=require('../middleware/fileUploadS3.middleware')
+const {s3update}=require('../middleware/s3operations.middleware');
 
 
 const profileRouter = express.Router();
@@ -47,11 +49,11 @@ profileRouter.post("/editBio",async (req,res)=>{
 });
 
 
-profileRouter.post("/updateImage",async (req,res)=>{
-    const {image}=req.body;
+profileRouter.post("/updateImage",upload.array('image'),(req,res,next)=>s3update(req,res,next),async (req,res)=>{
     const profileId=req.profileId;
+    const {profileImg,expiresAt,profileImageUrl}=req;
     try{
-        const profileData=await profileModel.findOneAndUpdate({_id:profileId},{profileImg:image},{new:true}).populate({path:'user',select:['-password']});  
+        const profileData=await profileModel.findOneAndUpdate({_id:profileId},{profileImg,expiresAt,profileImageUrl},{new:true}).populate({path:'user',select:['-password']});  
         res.status(200).send({'success':true,"message":'ProfileImage updated successfully',"result":profileData})
     }catch(err){
         console.log(err);

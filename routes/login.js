@@ -34,7 +34,7 @@ router.post("/", async (req, res) => {
         res.status(500).send( {'success':false,"message":'Wrong password please try again'});
       }
       }else{
-      res.status(500).send( {'success':false,"message":'Enter Valid Data'});
+      res.status(500).send( {'success':false,"message":'Enter Correct Credentials'});
     }
   }catch(err){
     console.log(err);
