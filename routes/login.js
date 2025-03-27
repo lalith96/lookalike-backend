@@ -33,7 +33,7 @@ router.post("/", async (req, res) => {
         res.clearCookie('token');
         res.status(500).send( {'success':false,"message":'Wrong password please try again'});
       }
-    }else{
+      }else{
       res.status(500).send( {'success':false,"message":'Enter Valid Data'});
     }
   }catch(err){

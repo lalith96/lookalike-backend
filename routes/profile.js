@@ -82,7 +82,6 @@ profileRouter.post('/openProfile',async(req,res)=>{
             res.status(200).send({'success':true,"message":'Open Profile API successful',"result":result});
        }else{
         res.status(500).send({'success':false,"message":'Cannot open profile'});
-
        }
     }catch(err){
         console.log(err);
@@ -211,6 +210,40 @@ profileRouter.post('/unBlockProfile',async(req,res)=>{
         session.endSession();
     }
 
+})
+
+profileRouter.get('/getSuggestions',async(req,res)=>{
+    const {profileId}=req;
+    let suggestionList=[];
+
+    try{
+        const profileList=await profileModel.findById({_id:profileId}).select('following  blockedProfiles');
+    
+        const friendsList=profileList.following?.map((eachFriend)=>eachFriend.toString());
+        const blockedList=profileList.blockedProfiles?.map((eachFriend)=>eachFriend.toString());
+        if(profileList.following.length>0){
+            //all following friends profiles
+            const frndOfFrnfList= await profileModel.find({_id :{$in:friendsList}}).populate('following');
+
+            //each friend following keep in array of suggestions list
+            frndOfFrnfList.map((eachFrined)=>{
+                    eachFrined.following?.map((eachFollowingId)=>{
+                        const followingId=eachFollowingId._id.toString();
+                        if(!blockedList.includes(followingId)){
+                            suggestionList.push({
+                                suggestionId:followingId,
+                                suggestionusername:eachFollowingId.username,
+                                suggestionUserImage:eachFollowingId.profileImg
+                            })
+                        }
+                    });
+            })
+        }  
+        res.status(200).send({'success':true,"message":'Suggestion List Retrieved Successfully',"result":suggestionList}); 
+    }catch(err){
+        console.log(err);
+        res.status(500).send({'success':false,"message":'Error while Suggesting',"errorMsg":err.message});
+    }
 })
 
 

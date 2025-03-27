@@ -1,16 +1,18 @@
 const express=require('express');
 const postRouter=express.Router();
 const {ObjectId}=require('mongodb');
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const profileModel=require('../models/profile_model');
 const postModel=require('../models/posts_model');
 const commentModel=require('../models/comments_model');
 const alertModel = require('../models/alerts_model');
+const upload=require('../middleware/fileUploadS3.middleware');
+const {s3upload,s3delete,s3update}=require('../middleware/s3operations.middleware');
 
-
-postRouter.post("/addPost",async (req,res)=>{
-    const {postImages,location,description}=req.body;
+postRouter.post("/addPost",upload.array('postImages'),(req,res,next)=>s3upload(req,res,next),async (req,res)=>{
+    const {location,description}=req.body;
+    const {img,imageNames,expiresAt}=req;
     const profileId=req.profileId;
     const session = await mongoose.startSession();
     
@@ -19,10 +21,13 @@ postRouter.post("/addPost",async (req,res)=>{
         //add into posts array.
         const postData={
             profile:profileId,
-            img:postImages,
+            img:img,
+            imgName:imageNames,
+            expiresAt:expiresAt,
             location,
             description
         }
+
         
         const post_model = new postModel(postData);
         const postResponse = await post_model.save({session});
@@ -48,6 +53,7 @@ postRouter.delete('/deletePost',async(req,res)=>{
         const postId=req.query.postId;
         const {profileId}=req;
         console.log(postId+" "+profileId)
+
         
         //delete post
        const postData= await postModel.findOneAndDelete({_id:postId,profile:profileId},{session});
@@ -57,7 +63,11 @@ postRouter.delete('/deletePost',async(req,res)=>{
 
         //delet post from profile 
         const result=postData?await profileModel.findOneAndUpdate({_id:profileId},{$pull:{posts:postId}},{new:true,session}):null;
-       await session.commitTransaction()
+
+        //delete from s3
+        postData && await s3delete(postData);
+
+        await session.commitTransaction()
         if(result){
             res.status(200).send({'success':true,"message":'Post Deleted Successfully',"result":result});
             return;
@@ -73,19 +83,25 @@ postRouter.delete('/deletePost',async(req,res)=>{
 })
 
 
-postRouter.put('/updatePost',async(req,res)=>{
+postRouter.put('/updatePost',upload.array('postImages'),(req,res,next)=>s3update(req,res,next),async(req,res)=>{
 
-    const {postImages,location,description}=req.body;
+    const {location,description}=req.body;
     const postId=req.query.postId;
-    const {profileId}=req;
+    const {profileId,img,imageNames,expiresAt}=req;
     try{    
         const postData={
-            img:postImages,
             location,
             description
         }
 
+        if(img && imageNames && expiresAt){
+            postData.img=img
+            postData.imgName=imageNames
+            postData.expiresAt=expiresAt
+        }
+       
         const result=await postModel.findOneAndUpdate({_id:postId,profile:profileId},postData,{new:true});
+
         if(result){
             res.status(200).send({'success':true,"message":'Post Updated Successfully',"result":result});
             return;

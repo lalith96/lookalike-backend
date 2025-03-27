@@ -6,6 +6,8 @@ const postsSchema=new mongoose.Schema({
         ref:"profiles"
     },
     img:[String],
+    imgName:[String],
+    expiresAt:String,
     description:String,
     location:String,
     likeCount:{
@@ -30,12 +32,11 @@ const postsSchema=new mongoose.Schema({
             type:mongoose.Schema.Types.ObjectId,
             ref:"comments"
         }
-    ],
-    createdAt:{ 
-        type: Date, 
-        default: Date.now
-    }
-})
+    ],    
+},
+{
+    timestamps: true 
+  })
 
 const postModel = mongoose.model("posts", postsSchema);
 
