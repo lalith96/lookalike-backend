@@ -57,9 +57,9 @@ app.use("/api/search",jwtAuth,searchRouter);
 app.use("/api/alerts",jwtAuth,alertRouter);
 app.use('/api/posts',jwtAuth,postRouter);
 app.use('/auth', oAuthRouter);
-app.use('/api/chat',chatRouter);
-app.use('/api/messages',messageRouter);
-app.use('/api/groups',groupRouter);
+app.use('/api/chat',jwtAuth,chatRouter);
+app.use('/api/messages',jwtAuth,messageRouter);
+app.use('/api/groups',jwtAuth,groupRouter);
 
 const server = http.createServer(app);
 const io = socketIo(server,{

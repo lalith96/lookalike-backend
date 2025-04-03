@@ -11,7 +11,8 @@ const generateToken=(userData)=>{
                 profileId:userData.profile._id,
                 username:userData.profile.username
                 },
-                process.env.JWT_KEY
+                process.env.JWT_KEY,
+                { expiresIn: '7d' }
             );
         return token;
     }catch(err){

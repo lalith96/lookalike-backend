@@ -9,10 +9,16 @@ const commentModel=require('../models/comments_model');
 const alertModel = require('../models/alerts_model');
 const upload=require('../middleware/fileUploadS3.middleware');
 const {s3upload,s3delete,s3update}=require('../middleware/s3operations.middleware');
+const logger=require('../middleware/winstonlogger.middleware')
+
 
 postRouter.post("/addPost",upload.array('postImages'),(req,res,next)=>s3upload(req,res,next),async (req,res)=>{
+    logger.info(`Add Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body, headers: req.headers,
+    }); 
     const {location,description}=req.body;
     const {img,imageNames,expiresAt}=req;
+    logger.verbose(`img,imageNames,expiresAt ${img} ${imageNames} ${expiresAt}`)
     const profileId=req.profileId;
     const session = await mongoose.startSession();
     
@@ -34,10 +40,12 @@ postRouter.post("/addPost",upload.array('postImages'),(req,res,next)=>s3upload(r
 
         //add in profile record in posts array
         const profileRes=await profileModel.findOneAndUpdate({_id:profileId},{$push:{posts:postResponse._id}},{new:true,session}).populate({path:'user',select:['-password']}); 
+        logger.verbose(`Add post Posts API Response ${profileRes}`)
         await session.commitTransaction();
         res.status(200).send({'success':true,"message":'post added successfully',"result":profileRes})
     }catch(err){
         console.log(err);
+        logger.error(`Add Post Posts API Error ${err}`)
         await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error adding post',"errorMsg":err.message});
     }finally{
@@ -46,6 +54,10 @@ postRouter.post("/addPost",upload.array('postImages'),(req,res,next)=>s3upload(r
 });
 
 postRouter.delete('/deletePost',async(req,res)=>{
+    logger.info(`Add Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const session = await mongoose.startSession();
     try{
         session.startTransaction();
@@ -66,7 +78,7 @@ postRouter.delete('/deletePost',async(req,res)=>{
 
         //delete from s3
         postData && await s3delete(postData);
-
+        logger.verbose(`Delete post Posts API Response ${result}`)
         await session.commitTransaction()
         if(result){
             res.status(200).send({'success':true,"message":'Post Deleted Successfully',"result":result});
@@ -75,6 +87,7 @@ postRouter.delete('/deletePost',async(req,res)=>{
         res.status(500).send({'success':false,"message":'Invalid Access'});
     }catch(err){
         console.log(err);
+        logger.error(`Delete Post Posts API Error ${err}`)
         await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while deleting post',"errorMsg":err.message});
     }finally{
@@ -84,10 +97,15 @@ postRouter.delete('/deletePost',async(req,res)=>{
 
 
 postRouter.put('/updatePost',upload.array('postImages'),(req,res,next)=>s3update(req,res,next),async(req,res)=>{
-
+    logger.info(`Update Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const {location,description}=req.body;
     const postId=req.query.postId;
     const {profileId,img,imageNames,expiresAt}=req;
+    logger.verbose(`img,imageNames,expiresAt ${img} ${imageNames} ${expiresAt}`)
+
     try{    
         const postData={
             location,
@@ -101,7 +119,7 @@ postRouter.put('/updatePost',upload.array('postImages'),(req,res,next)=>s3update
         }
        
         const result=await postModel.findOneAndUpdate({_id:postId,profile:profileId},postData,{new:true});
-
+        logger.verbose(`Update post Posts API Response ${result}`)
         if(result){
             res.status(200).send({'success':true,"message":'Post Updated Successfully',"result":result});
             return;
@@ -109,48 +127,71 @@ postRouter.put('/updatePost',upload.array('postImages'),(req,res,next)=>s3update
         res.status(500).send({'success':false,"message":'Invalid Access'});
     }catch(err){
         console.log(err);
+        logger.error(`Update Post Posts API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error while updating post',"errorMsg":err.message});
     }
 })
 
 postRouter.post('/savePost',async(req,res)=>{
+    logger.info(`Save Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const {profileId}=req;
     const {postId}=req.body;
     
     try{
         const result=await profileModel.findOneAndUpdate({_id:profileId}, { $addToSet: { savedPosts: postId } },{new:true});
+        logger.verbose(`Save post Posts API Response ${result}`)
         res.status(200).send({'success':true,"message":'Saved Post Successfully',"result":result});
     }catch(err){
+        logger.error(`Save Post Posts API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error while saving post',"errorMsg":err.message});
     }
 });
 
 postRouter.post('/unsavePost',async(req,res)=>{
+    logger.info(`UnSave Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const {profileId}=req;
     const {postId}=req.body;
     
     try{
         const result=await profileModel.findOneAndUpdate({_id:profileId},{$pull:{savedPosts:postId}},{new:true});
+        logger.verbose(`UnSave post Posts API Response ${result}`)
         res.status(200).send({'success':true,"message":'UnSaved Post Successfully',"result":result});
     }catch(err){
+        logger.error(`UnSave Post Posts API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error while unsaving post',"errorMsg":err.message});
     }
 });
 
 postRouter.get('/getSavedPosts',async(req,res)=>{
     const {profileId}=req;
+    logger.info(`Get Saved Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const {postId}=req.body;
     
     try{
         const result=await profileModel.find({_id:profileId}).populate('posts');
+        logger.verbose(`Get Saved post Posts API Response ${result}`)
         res.status(200).send({'success':true,"message":'Posts Retrieved Successfully',"result":result[0].savedPosts});
     }catch(err){
+        logger.error(`Get Saved Post Posts API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error while retrieving posts',"errorMsg":err.message});
     }
 });
 
 //toggleLike 
 postRouter.post('/toggleLike',async(req,res)=>{
+    logger.info(`Toggle Like For Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const onOrOff=req.body.toggleLike;
     const postId=req.query.postId;
     const {profileId,username}=req;
@@ -177,7 +218,9 @@ postRouter.post('/toggleLike',async(req,res)=>{
         }else if(onOrOff=="OFF"){
             const alertDeleteData=await alertModel.deleteOne({postId:postId},{session});
             console.log(alertDeleteData)
+            logger.verbose(`Alert Delete Data ${alertDeleteData}`)
         }
+        logger.verbose(`Toggle Like For post Posts API Response ${result}`)
        await session.commitTransaction()
         if(result){
             res.status(200).send({'success':true,"message":'Likes Updated Successfully',"result":result});
@@ -186,6 +229,7 @@ postRouter.post('/toggleLike',async(req,res)=>{
         res.status(500).send({'success':false,"message":'Invalid Access'});
     }catch(err){
         console.log(err);
+        logger.error(`Toggle Like For Post Posts API Error ${err}`)
         await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while Liking post',"errorMsg":err.message});
     }finally{
@@ -196,6 +240,10 @@ postRouter.post('/toggleLike',async(req,res)=>{
 
 //add comment
 postRouter.post('/addComment',async(req,res)=>{
+    logger.info(`Add Comment For Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const postId=req.query.postId;
     const {profileId,username}=req;
     const {comment}=req.body;
@@ -216,9 +264,11 @@ postRouter.post('/addComment',async(req,res)=>{
             console.log("alert done")
         }
        await session.commitTransaction();
+       logger.verbose(`Add Comment For post Posts API Response ${postResult}`)
         res.status(200).send({'success':true,"message":'Comment Added Successfully',"result":postResult});
     }catch(err){
         console.log(err);
+        logger.error(`Add Comment For Post Posts API Error ${err}`)
         await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while adding comment',"errorMsg":err.message});
     }finally{
@@ -227,6 +277,10 @@ postRouter.post('/addComment',async(req,res)=>{
 })
 
 postRouter.put('/updateComment',async (req,res)=>{
+    logger.info(`Update Comment For Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const {comment}=req.body;
     const {profileId,username}=req;
     const commentId=req.query.commentId;
@@ -234,13 +288,15 @@ postRouter.put('/updateComment',async (req,res)=>{
     try{
         //update comment table
         const commentData=await commentModel.findByIdAndUpdate({_id:commentId,commentByProfileId:profileId},{comment,commentByProfileName:username},{new:true});
+       logger.verbose(`Update Comment For post Posts API Response ${commentData}`)
         if(commentData){
-            res.status(200).send({'success':false,"message":'Comment Added Successfully',"result":commentData});
+            res.status(200).send({'success':false,"message":'Comment Updated Successfully',"result":commentData});
         }else{
             res.status(500).send({'success':false,"message":'Invalid access'});
         }
     }catch(err){
         console.log(err);
+        logger.error(`Update Comment For Post Posts API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error while updating comment',"errorMsg":err.message});
     }
 })
@@ -248,6 +304,10 @@ postRouter.put('/updateComment',async (req,res)=>{
 
 //deletecomment
 postRouter.delete('/deleteComment',async(req,res)=>{
+    logger.info(`Delete Comment For Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     const commentId=req.query.commentId;
     const {profileId,username}=req;
     const session = await mongoose.startSession();
@@ -259,11 +319,12 @@ postRouter.delete('/deleteComment',async(req,res)=>{
         //add in posts db with the commentid 
         if(commentData){
             const postId=commentData.postId;
-            const postResult=await postModel.findByIdAndUpdate({_id:postId},{$pull:{commentArray:commentId},$inc:{commentCount:-1}},{new:true,session},{}).populate('profile')
+            const postResult=await postModel.findByIdAndUpdate({_id:postId},{$pull:{commentArray:commentId},$inc:{commentCount:-1}},{new:true,session}).populate('profile')
             
             //delete in alerts
             await alertModel.deleteOne({commentId},{session});
             await session.commitTransaction();
+            logger.verbose(`Delete Comment For post Posts API Response ${postResult}`)
             res.status(200).send({'success':true,"message":'Comment Deleted Successfully',"result":postResult});
         }else{
             await session.commitTransaction();
@@ -271,6 +332,7 @@ postRouter.delete('/deleteComment',async(req,res)=>{
         }
     }catch(err){
         console.log(err);
+        logger.error(`Delet Comment For Post Posts API Error ${err}`)
         await session.abortTransaction();
         res.status(500).send({'success':false,"message":'Error while deleting comment',"errorMsg":err.message});
     }finally{
@@ -279,11 +341,17 @@ postRouter.delete('/deleteComment',async(req,res)=>{
 })
 
 postRouter.get("/getComments",async(req,res)=>{
+    logger.info(`Get Comments For Post Posts API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+    });
     try{
         const postId=req.query.postId;
         const comments=await commentModel.find({postId:postId});
+        logger.verbose(`Get Comments For post Posts API Response ${comments}`)
         res.status(200).send({'success':true,"message":'Comment Retrieved Successfully',"result":comments});
     }catch(err){
+        logger.error(`Get Comments For Post Posts API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Retrieving Comments',"errorMsg":err.message});
     }
 });

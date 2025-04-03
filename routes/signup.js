@@ -6,9 +6,14 @@ const mongoose = require("mongoose");
 const  userModel  = require("../models/user_model");
 const infoModel=require('../models/info_model')
 const profileModel=require("../models/profile_model");
+const logger=require('../middleware/winstonlogger.middleware')
+
 
 router.post("/", async (req, res) => {
-  console.log("signup req");
+  logger.info(`SignUp API  ${req.method} ${req.url}`, {
+      body: req.body,
+      headers: req.headers,
+    });
   const session = await mongoose.startSession();
   try{
     let userdata = ({
@@ -21,6 +26,7 @@ router.post("/", async (req, res) => {
     userdata.password=password!=null?await bcrypt.hash(password, 12):null;
     //check if user already present
     let isuserPresent = await userModel.findOne({$or:[{email:email},{number:number}]});
+    logger.verbose(`Is user present ${isuserPresent}`)
     console.log(isuserPresent);
     if(isuserPresent){
       
@@ -41,12 +47,14 @@ router.post("/", async (req, res) => {
   
       //sve profileid in user
       const finalRes=await userModel.updateOne({_id:result._id},{profile:profileRes._id},{session});
+      logger.verbose(` Final Response of SignUp API ${JSON.stringify(finalRes)}`)
       // info.save();
       await session.commitTransaction();
       res.status(200).send({'success':true,"message":'Sign Up Successful',"result":result});
     }
   }catch(err){
     console.log(err);
+    logger.error(`signUp API Error ${err}`)
     await session.abortTransaction();
     res.status(400).send({'success':false,"message":"Error Signing Up","error":err.message})
   }finally{

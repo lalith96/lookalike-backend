@@ -12,65 +12,85 @@ const profileModel=require('../models/profile_model');
 const userModel=require('../models/user_model');
 const generateToken=require('../utils/token');
 const alertModel=require('../models/alerts_model')
-
+const logger=require('../middleware/winstonlogger.middleware')
 
 
 settingsRouter.get("/",async(req,res)=>{
+    logger.info(`Get Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        userId:req.userId,
+        headers: req.headers,
+      }); 
     //get the userId;
-    const userId=req.userID;
-    const userData=await userModel.findOne({_id:userId}).populate('profile');
-    const {email,gender,dob,theme,language,country,profile}=userData;
+    try{
+        const userId=req.userID;
+        const userData=await userModel.findOne({_id:userId}).populate('profile');
+        const {email,gender,dob,theme,language,country,profile}=userData;
 
-    //get all profiles except a particular profile.
-    const profileId=userData.profile;
-    const blockedProfiles=userData.profile.blockedProfiles;
-    let profiles=await profileModel.find({
-        _id:{$ne:profileId},visibility:true
-    }).populate('user');
+        logger.verbose(` Get Settings Find userCall Response ${userData}`)
 
-    profiles=profiles.filter((eachProfile)=>{
-        if(!blockedProfiles.includes(eachProfile._id)){
-            return eachProfile;
+        //comment the share profile code
+        //get all profiles except a particular profile.
+        // const profileId=userData.profile;
+        // const blockedProfiles=userData.profile.blockedProfiles;
+        // let profiles=await profileModel.find({
+        //     _id:{$ne:profileId},visibility:true
+        // }).populate('user');
+
+        // profiles=profiles.filter((eachProfile)=>{
+        //     if(!blockedProfiles.includes(eachProfile._id)){
+        //         return eachProfile;
+        //     }
+        // });
+        // console.log(profiles);
+
+        //your account setup done 
+        settings["Your Account"][0].PersonalInformation.DateOfBirth=!dob?settings["Your Account"][0].PersonalInformation.DateOfBirth:dob;
+        settings["Your Account"][0].PersonalInformation.Gender=!gender?settings["Your Account"][0].PersonalInformation.Gender:gender;
+        settings["Your Account"][0].PersonalInformation["Country/region"]=!country?settings["Your Account"][0].PersonalInformation["Country/region"]:country;
+        settings["Your Account"][0].PersonalInformation.Language=!language?settings["Your Account"][0].PersonalInformation.Language:language;
+        settings["Your Account"][1].EmailAddress=email;
+        if(theme=="light"){
+            settings["Your Account"][3].AppTheme["Light Mode"]=true;
+            settings["Your Account"][3].AppTheme["Dark Mode"]=settings["Your Account"][3].AppTheme["System Default"]=false;
+        }else if(theme=="dark"){
+            settings["Your Account"][3].AppTheme["Dark Mode"]=true;
+            settings["Your Account"][3].AppTheme["Light Mode"]=settings["Your Account"][3].AppTheme["System Default"]=false;
+        }else{
+            settings["Your Account"][3].AppTheme["System Default"]=true;
+            settings["Your Account"][3].AppTheme["Light Mode"]=settings["Your Account"][3].AppTheme["Dark Mode"]=false;
         }
-    });
-    console.log(profiles);
+        settings["Your Account"][4]["Profile Visibility"]=profile.visibility;
+        settings["Your Account"][5]["Share Profile"]=[];
 
-    //your account setup done 
-    settings["Your Account"][0].PersonalInformation.DateOfBirth=!dob?settings["Your Account"][0].PersonalInformation.DateOfBirth:dob;
-    settings["Your Account"][0].PersonalInformation.Gender=!gender?settings["Your Account"][0].PersonalInformation.Gender:gender;
-    settings["Your Account"][0].PersonalInformation["Country/region"]=!country?settings["Your Account"][0].PersonalInformation["Country/region"]:country;
-    settings["Your Account"][0].PersonalInformation.Language=!language?settings["Your Account"][0].PersonalInformation.Language:language;
-    settings["Your Account"][1].EmailAddress=email;
-    if(theme=="light"){
-        settings["Your Account"][3].AppTheme["Light Mode"]=true;
-        settings["Your Account"][3].AppTheme["Dark Mode"]=settings["Your Account"][3].AppTheme["System Default"]=false;
-    }else if(theme=="dark"){
-        settings["Your Account"][3].AppTheme["Dark Mode"]=true;
-        settings["Your Account"][3].AppTheme["Light Mode"]=settings["Your Account"][3].AppTheme["System Default"]=false;
-    }else{
-        settings["Your Account"][3].AppTheme["System Default"]=true;
-        settings["Your Account"][3].AppTheme["Light Mode"]=settings["Your Account"][3].AppTheme["Dark Mode"]=false;
+
+        //support 
+        settings.Support[0]["Terms Of Use"]=termsOfUse;
+        settings.Support[1]["Privacy Policy"]=privacyPolicy;
+        logger.verbose(`Get Settings API  Output ${JSON.stringify(settings)}`)
+
+        res.status(200).send(settings);
+    }catch(err){
+        logger.error(`Get Settings API Error ${err}`)
+        res.status(500).send({'success':false,"message":'Error WHile Fetching Settings',"errorMsg":err.message});
     }
-    settings["Your Account"][4]["Profile Visibility"]=profile.visibility;
-    settings["Your Account"][5]["Share Profile"]=profiles;
-
-
-    //support 
-    settings.Support[0]["Terms Of Use"]=termsOfUse;
-    settings.Support[1]["Privacy Policy"]=privacyPolicy;
-
-    res.status(200).send(settings);
 });
 
 
 
 settingsRouter.post('/dobUpdate',async(req,res)=>{
+    logger.info(`DOB Update Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      }); 
     const userId=req.userID;
     const dob=req.body.dob;    
     try{
         const userData=await userModel.findOneAndUpdate({_id:userId},{dob:dob},{new:true}).select('-password'); 
+        logger.verbose(`DOB Updated API Response ${userData}`)
         res.status(200).send({'success':true,"message":'DOB Updated successfully',"result":userData})
     }catch(err){
+        logger.error(`DOB Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Updating Date Of Birth',"errorMsg":err.message});
     }
     
@@ -79,34 +99,52 @@ settingsRouter.post('/dobUpdate',async(req,res)=>{
 
 
 settingsRouter.post('/genderUpdate',async(req,res)=>{
+    logger.info(`Gender Update Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      }); 
     const userId=req.userID;
     const gender=req.body.gender;
     try{
         const userData=await userModel.findOneAndUpdate({_id:userId},{gender},{new:true}).select('-password'); 
+        logger.verbose(`Gender Updated API Response ${userData}`)
         res.status(200).send({'success':true,"message":'Gender Updated successfully',"result":userData})
     }catch(err){
+        logger.error(`Gender Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Updating Gender',"errorMsg":err.message});
     }
 })
 
 settingsRouter.post('/countryRegion',async(req,res)=>{
+    logger.info(`Country Region Update Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      }); 
     const userId=req.userID;
     const country=req.body.country;
     try{
         const userData=await userModel.findOneAndUpdate({_id:userId},{country},{new:true}).select('-password'); 
+        logger.verbose(`Country Region Updated API Response ${userData}`)
         res.status(200).send({'success':true,"message":'Country/Region Updated successfully',"result":userData})
     }catch(err){
+        logger.error(`Country Region Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Updating Country/Region',"errorMsg":err.message});
     }
 })
 
 settingsRouter.post('/language',async(req,res)=>{
+    logger.info(`Language  Update Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      });
     const userId=req.userID;
     const language=req.body.language;
     try{
         const userData=await userModel.findOneAndUpdate({_id:userId},{language},{new:true}).select('-password'); 
+        logger.verbose(`Langauge  Updated API Response ${userData}`)
         res.status(200).send({'success':true,"message":'Language Updated successfully',"result":userData})
     }catch(err){
+        logger.error(`Language  Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Updating Language',"errorMsg":err.message});
     }
 })
@@ -114,6 +152,10 @@ settingsRouter.post('/language',async(req,res)=>{
 //can we do more 
 
 settingsRouter.post('/emailIdUpdate',async(req,res)=>{
+    logger.info(`EmailId  Update Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      });
     const userId=req.userID;
     console.log(userId);
     const email=req.body.email;
@@ -121,15 +163,21 @@ settingsRouter.post('/emailIdUpdate',async(req,res)=>{
       const userData=await userModel.findOneAndUpdate({_id:userId},{email},{new:true}).select('-password').populate('profile');
       const token = generateToken(userData);
       res.cookie('token',token);
-      userData.token=token;
-      res.status(200).send({'success':true,"message":'Email Updated successfully',"result":userData})
+      console.log(userData)
+      logger.verbose(`EmailId  Updated API Response ${userData} With New Token ${token}`)
+      res.status(200).send({'success':true,"message":'Email Updated successfully',"result":userData,"token":token})
     }catch(err){
+        logger.error(`EmailId Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Updating Email',"errorMsg":err.message});
     }
 })
 
 
 settingsRouter.post('/passwordUpdate',async(req,res)=>{
+    logger.info(`Password Update Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      });
     const userId=req.userID;
     const oldPassword=req.body.oldPassword;
     const newPassword=req.body.newPassword;
@@ -137,49 +185,73 @@ settingsRouter.post('/passwordUpdate',async(req,res)=>{
         const userPresent=await userModel.findOne({_id:userId});
         const result = userPresent && await bcrypt.compare(req.body.oldPassword, userPresent.password);
         console.log(userPresent +" "+result)
+        logger.verbose(`Password Update User Present  ${userPresent} and Result ${result}`)
         if(result){
             const password=await bcrypt.hash(newPassword, 12);
             const userData=await userModel.findOneAndUpdate({_id:userId},{password:password}).select('-password').populate('profile'); 
             const token = generateToken(userData);
             res.cookie('token',token);
-            res.status(200).send({'success':true,"message":'Password Updated Successfully',"result":userData});
+            logger.verbose(`Password  Updated API Response ${userData} With New Token ${token}`)
+            res.status(200).send({'success':true,"message":'Password Updated Successfully',"result":userData,"token":token});
         }else{
+            logger.info('WrongPassword')
             res.status(500).send({'success':false,"message":'Wrong Password'});
         }
     }catch(err){
+        logger.error(`Password Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Updating Password',"errorMsg":err.message});
     }
 })
 
 settingsRouter.post('/themeUpdate',async(req,res)=>{
+    logger.info(`Theme Update Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      });
     const userId=req.userID;
     const theme=req.body.theme;
     try{
         const userData=await userModel.findOneAndUpdate({_id:userId},{theme:theme},{new:true}).select('-password');  
+        logger.verbose(`Theme  Updated API Response ${userData}`)
         res.status(200).send({'success':true,"message":'Theme Updated successfully',"result":userData})
     }catch(err){
+        logger.error(`Theme Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Updating Theme',"errorMsg":err.message});
     }
 })
 
 settingsRouter.post('/profileVisibilty',async(req,res)=>{
+    logger.info(`Profile Visibility Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      });
     const profileId=req.profileId;
     const visibility=req.body.visibility;
     try{
         const profileData=await profileModel.findByIdAndUpdate(profileId,{visibility:visibility},{new:true});
+        logger.verbose(`ProfileVisibility  Updated API Response ${profileData}`)
         res.status(200).send({'success':true,"message":'Visibility Updated successfully',"result":profileData})
     }catch(err){
+        logger.error(`ProfileVisibility Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Updating Visibility',"errorMsg":err.message});
     }
 })
 
 settingsRouter.post('/logout',(req,res)=>{
+    logger.info(`Logout API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      });
     res.clearCookie('token');
     res.status(200).send({'success':true,"message":'Logout Successful'});
 })
 
 
 settingsRouter.post('/sendProfiles',async (req,res)=>{
+    logger.info(`sendProfiles Settings API  ${req.method} ${req.url}`, {
+        body: req.body,
+        headers: req.headers,
+      });
     const {profileId,username}=req;
     const sharedProfiles=req.body.profiles;
 
@@ -219,10 +291,12 @@ settingsRouter.post('/sendProfiles',async (req,res)=>{
 
             const alertData = new alertModel(alertMsg);
             const result = await alertData.save();
+            logger.verbose(`Send Profiles Updated API Response ${result}`)
         })
         res.status(200).send({'success':true,"message":'Profiles Shared Successfully'})
     }catch(err){
         console.log(err);
+        logger.error(`SendProfiles Update API Error ${err}`)
         res.status(500).send({'success':false,"message":'Error Sharing profiles',"errorMsg":err.message});
     }
 })

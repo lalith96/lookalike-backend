@@ -4,6 +4,8 @@ const passport = require('passport');
 const oAuthRouter = express.Router();
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const logger=require('../middleware/winstonlogger.middleware')
+
 
 oAuthRouter.get(
   '/google/callback',
@@ -13,6 +15,7 @@ oAuthRouter.get(
     console.log(req.user);
     const userDataJSON = JSON.stringify(req.user);
     const encodedUserData = encodeURIComponent(userDataJSON);
+    logger.verbose(`encodedUserData ${JSON.stringify(encodedUserData)}  \n userDataJSON ${userDataJSON}`)
     res.redirect(`${process.env.REACT_URL}/google-auth?userData=${encodedUserData}`); //send token to frontend
   }
 );
