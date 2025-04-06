@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const otpModel  = require("../models/otp_model");
 const userModel=require("../models/user_model");
 const logger=require('../middleware/winstonlogger.middleware')
-const  sendemail  = require("../utils/sendemail");
+const  {sendemail}  = require("../utils/sendemail");
 
 router.post("/getcode", async (req, res) => {
   console.log(req.body);

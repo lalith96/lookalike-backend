@@ -37,10 +37,10 @@ router.post("/", async (req, res) => {
         res.status(200).send( {'success':true,"message":'Login  Successful',"result":response});
       } else {
         res.clearCookie('token');
-        res.status(500).send( {'success':false,"message":'Wrong password please try again'});
+        res.status(200).send( {'success':false,"message":'Wrong password please try again'});
       }
       }else{
-      res.status(500).send( {'success':false,"message":'Enter Correct Credentials'});
+      res.status(200).send( {'success':false,"message":'Enter Correct Credentials'});
     }
   }catch(err){
     console.log(err);

@@ -29,7 +29,7 @@ messageRouter.post('/createMessage',async(req,res)=>{
     }catch(err){
         console.log(err);
         logger.error(`Create Message Chats API Error ${err}`)
-        res.status(500).send({"success":false,"message":"Error While creating message","errorMsg":err});
+        res.status(500).send({"success":false,"message":"Error While creating message","errorMsg":err.message});
     }
 })
 
@@ -51,7 +51,7 @@ messageRouter.get('/getMessages',async(req,res)=>{
     }catch(err){
         console.log(err);
         logger.error(`Get Message Chats API Error ${err}`)
-        res.status(500).send({"success":false,"message":"Error While retrieving message","errorMsg":err});
+        res.status(500).send({"success":false,"message":"Error While retrieving message","errorMsg":err.message});
     }
 })
 

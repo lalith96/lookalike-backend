@@ -24,6 +24,7 @@ const refreshSignedUrls=require('./middleware/refreshSignedUrls.middleware');
 const chatRouter=require('./routes/chat.controller');
 const messageRouter=require('./routes/message.controller')
 const groupRouter=require('./routes/group.controller')
+const reportRouter=require('./routes/report.controller');
 const onlineUserModel=require('./models/onlineuser.model');
 
 // middleware
@@ -60,6 +61,7 @@ app.use('/auth', oAuthRouter);
 app.use('/api/chat',jwtAuth,chatRouter);
 app.use('/api/messages',jwtAuth,messageRouter);
 app.use('/api/groups',jwtAuth,groupRouter);
+app.use('/api/report',jwtAuth,reportRouter)
 
 const server = http.createServer(app);
 const io = socketIo(server,{
@@ -70,7 +72,7 @@ const io = socketIo(server,{
 
 //refresh signed Urls every 5mins
 setInterval(()=>{
-  refreshSignedUrls()
+  // refreshSignedUrls()
 },process.env.REFRESH_SIGNED_URL)
 
 io.on('connection',(socket)=>{

@@ -16,7 +16,7 @@ const settings={
                 "Dark Mode":false,
                 "System Default":true
         }},
-        { "Profile Visibility":true},
+        { "Profile Visibility":false},
             {"Share Profile":[]}
     ],
 

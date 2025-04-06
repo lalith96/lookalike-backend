@@ -7,9 +7,10 @@ const  userModel  = require("../models/user_model");
 const infoModel=require('../models/info_model')
 const profileModel=require("../models/profile_model");
 const logger=require('../middleware/winstonlogger.middleware')
+const signUpValidator=require('../validators/signUp.validator')
 
 
-router.post("/", async (req, res) => {
+router.post("/", (req,res,next)=>signUpValidator(req,res,next),async (req, res) => {
   logger.info(`SignUp API  ${req.method} ${req.url}`, {
       body: req.body,
       headers: req.headers,
@@ -30,7 +31,7 @@ router.post("/", async (req, res) => {
     console.log(isuserPresent);
     if(isuserPresent){
       
-      res.status(500).send({'success':false,"message":'User Already signed Up'});
+      res.status(200).send({'success':true,"message":'User Already signed Up'});
     }else{
       session.startTransaction();
       const user_model = new userModel(userdata);
@@ -56,7 +57,7 @@ router.post("/", async (req, res) => {
     console.log(err);
     logger.error(`signUp API Error ${err}`)
     await session.abortTransaction();
-    res.status(400).send({'success':false,"message":"Error Signing Up","error":err.message})
+    res.status(500).send({'success':false,"message":"Error Signing Up","error":err.message})
   }finally{
     session.endSession();
   }
