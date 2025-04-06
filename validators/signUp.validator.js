@@ -35,7 +35,7 @@ const signUpValidator=async (req,res,next)=>{
 
     // 4. if errros, return the error message
     if (!validationErrors.isEmpty()) {
-       res.status(200).send({'success':true,"message":'Fields Missing',"errorMsg": validationErrors.array()[0].msg});
+       res.status(200).send({'success':true,"message":'Fields Missing',"result": validationErrors.array()[0].msg});
     }else{
       next();
     }
